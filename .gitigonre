@@ -1,2 +1,6 @@
-.venv
-_pycache_
+
+.venv/
+__pycache__/
+.pyc
+.env
+api_response.json
