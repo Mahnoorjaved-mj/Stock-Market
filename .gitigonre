@@ -1,4 +1,5 @@
-__pycache__
-ai_predictions.cpython-314.pyc
-stock_data.cpython-314.pyc
+.venv/
+__pycache__/
+*.pyc
+.env
 api_response.json
