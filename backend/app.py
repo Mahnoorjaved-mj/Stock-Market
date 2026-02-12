@@ -6,10 +6,10 @@ import sys
 from datetime import datetime, timedelta
 import threading
 import time
-import stock_data
+import backend.stock_data as stock_data
 
 
-from ai_predictions import ai_predictor
+from backend.ai_predictions import ai_predictor
 
 
 if sys.platform == 'win32':
