@@ -1,5 +1,4 @@
-.venv/
-__pycache__/
-*.pyc
-.env
-api_response.json
+git rm -r --cached __pycache__
+git rm --cached ai_predictions.cpython-314.pyc
+git rm --cached stock_data.cpython-314.pyc
+git rm --cached api_response.json
