@@ -1,4 +1,4 @@
-git rm -r --cached __pycache__
-git rm --cached ai_predictions.cpython-314.pyc
-git rm --cached stock_data.cpython-314.pyc
-git rm --cached api_response.json
+__pycache__
+ai_predictions.cpython-314.pyc
+stock_data.cpython-314.pyc
+api_response.json
