@@ -1,0 +1,18 @@
+{
+  "symbol": "MSFT",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.9330568313598633,
+  "mape": 27.03765869140625,
+  "confidence": 93.30567932128906,
+  "trained_date": "2026-02-13T00:47:35.328984"
+}

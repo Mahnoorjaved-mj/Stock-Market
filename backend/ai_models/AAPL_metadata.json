@@ -1,0 +1,18 @@
+{
+  "symbol": "AAPL",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.9733842611312866,
+  "mape": 53.5362548828125,
+  "confidence": 95.0,
+  "trained_date": "2026-02-13T01:02:36.070232"
+}

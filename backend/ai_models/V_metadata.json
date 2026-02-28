@@ -1,0 +1,18 @@
+{
+  "symbol": "V",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.0,
+  "mape": 26.80805015563965,
+  "confidence": 40.0,
+  "trained_date": "2026-02-13T01:14:41.078603"
+}

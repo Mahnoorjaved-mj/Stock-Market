@@ -1,0 +1,18 @@
+{
+  "symbol": "AMD",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.9824545383453369,
+  "mape": 41.77989196777344,
+  "confidence": 95.0,
+  "trained_date": "2026-02-13T01:23:15.656740"
+}

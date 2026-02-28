@@ -1,0 +1,18 @@
+{
+  "symbol": "INTC",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.9671012163162231,
+  "mape": 21.484582901000977,
+  "confidence": 95.0,
+  "trained_date": "2026-02-13T01:25:38.100292"
+}

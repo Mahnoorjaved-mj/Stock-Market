@@ -1,0 +1,18 @@
+{
+  "symbol": "NFLX",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.9588794112205505,
+  "mape": 8.387539863586426,
+  "confidence": 95.0,
+  "trained_date": "2026-02-13T18:11:46.328936"
+}

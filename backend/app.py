@@ -8,7 +8,7 @@ import threading
 import time
 import stock_data
 from ai_predictions import ai_predictor
-
+import os
 
 
 if sys.platform == 'win32':
@@ -17,9 +17,13 @@ if sys.platform == 'win32':
 # -----------------------------------
 # FLASK SETUP
 # -----------------------------------
-app = Flask(__name__, template_folder='templates')
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "../frontend/templates"),
+    static_folder=os.path.join(BASE_DIR, "../frontend/static")
+)
 CORS(app)
-
 # -----------------------------------
 # LIVE DATA CACHE
 # -----------------------------------
