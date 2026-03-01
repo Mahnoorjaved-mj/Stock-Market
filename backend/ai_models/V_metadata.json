@@ -11,8 +11,8 @@
     "macd"
   ],
   "sequence_length": 30,
-  "r_squared": 0.0,
-  "mape": 26.80805015563965,
-  "confidence": 40.0,
-  "trained_date": "2026-02-13T01:14:41.078603"
+  "r_squared": 0.867313802242279,
+  "mape": 8.107109069824219,
+  "confidence": 86.73137664794922,
+  "trained_date": "2026-03-01T01:33:55.099087"
 }
