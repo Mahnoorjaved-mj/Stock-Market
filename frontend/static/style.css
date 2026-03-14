@@ -390,4 +390,84 @@ body {
     .search-box {
         flex-direction: column;
     }
+
+}
+/* ===== ALERT PAGE ===== */
+
+.alert-container {
+    padding: 40px;
+    max-width: 600px;
+    margin: auto;
+}
+
+.alert-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.alert-header h2 {
+    font-size: 28px;
+    color: #1e293b;
+}
+
+.alert-header p {
+    color: #64748b;
+}
+
+.alert-card {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #334155;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.alert-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(90deg, #2563eb, #1d4ed8);
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.alert-btn:hover {
+    background: linear-gradient(90deg, #1d4ed8, #1e40af);
+}
+
+.success-message {
+    margin-top: 15px;
+    padding: 10px;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 8px;
+    text-align: center;
 }
