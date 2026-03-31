@@ -2,49 +2,55 @@
 
 {% block content %}
 
-<div class="alert-container">
+<div class="alert-wrapper">
 
+    <!-- Header -->
     <div class="alert-header">
-        <h2>📢 Smart Stock Alerts</h2>
-        <p>Set intelligent alerts and receive daily email reports.</p>
+        <h2>📊 Stock Alert</h2>
+        <p>Monitor market movements and receive intelligent email insights daily.</p>
     </div>
 
+    <!-- Card -->
     <div class="alert-card">
 
         <form method="POST" action="/set-alert">
 
-            <div class="form-group">
-                <label>Stock Symbol</label>
-                <input type="text" name="symbol" placeholder="e.g. AAPL" required>
-            </div>
+            <div class="grid">
 
-            <div class="form-group">
-                <label>Target Price ($)</label>
-                <input type="number" step="0.01" name="price" placeholder="Enter target price" required>
-            </div>
+                <div class="form-group">
+                    <label>📌 Stock Symbol</label>
+                    <input type="text" name="symbol" placeholder="AAPL, TSLA..." required>
+                </div>
 
-            <div class="form-group">
-                <label>Alert Type</label>
-                <select name="condition">
-                    <option value="above">📈 Price Goes Above</option>
-                    <option value="below">📉 Price Goes Below</option>
-                </select>
-            </div>
+                <div class="form-group">
+                    <label>💲 Target Price</label>
+                    <input type="number" step="0.01" name="price" placeholder="e.g. 200" required>
+                </div>
 
-            <div class="form-group">
-                <label>Email for Notification</label>
-                <input type="email" name="email" placeholder="your@email.com" required>
+                <div class="form-group">
+                    <label>📈 Alert Condition</label>
+                    <select name="condition">
+                        <option value="above">Above Target Price</option>
+                        <option value="below">Below Target Price</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>📧 Email Address</label>
+                    <input type="email" name="email" placeholder="your@email.com" required>
+                </div>
+
             </div>
 
             <button type="submit" class="alert-btn">
-                Set Alert
+                🚀 Activate Alert
             </button>
 
         </form>
 
         {% if message %}
         <div class="success-message">
-            {{ message }}
+            ✅ {{ message }}
         </div>
         {% endif %}
 
