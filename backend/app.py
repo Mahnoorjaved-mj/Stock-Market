@@ -74,9 +74,6 @@ def ai_predictions_page():
 def market_analysis_page():
     return render_template("market_analysis.html")
 
-@app.route('/alerts')
-def alerts_page():
-    return render_template("alerts.html")
 # -----------------------------------
 # LIVE STOCK DATA API
 # -----------------------------------
