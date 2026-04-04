@@ -406,11 +406,18 @@
         
     </div>
 
-    <div class="container">
-        <div class="header">
-            <h1>🌍 Global Market Tracker</h1>
-            <div class="time-display" id="current-time">--:--:--</div>
-        </div>
+      <div class="header">
+     <h1> Global Market Tracker</h1>
+
+    <div style="display:flex; align-items:center; gap:10px;">
+        <div class="time-display" id="current-time">--:--:--</div>
+
+        <!-- 🔔 ALERT BUTTON -->
+        <button onclick="openAlertModal()" class="alert-btn">
+            🔔 Alert
+        </button>
+    </div>
+</div>
 
         <!-- METRICS GRID -->
         <div class="metrics-grid">

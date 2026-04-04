@@ -60,8 +60,90 @@ def background_ai_training():
 threading.Thread(target=background_ai_training, daemon=True).start()
 
 # -----------------------------------
+# ALERT CHECKER THREAD
+# -----------------------------------
+
+def check_alerts():
+    while True:
+        for alert in alerts:
+            if alert["triggered"]:
+                continue
+
+            try:
+                current_price = stock_data.get_price(alert["stock"])
+
+                if alert["condition"] == "above" and current_price >= alert["price"]:
+                    print(f"🚨 ALERT: {alert['stock']} went ABOVE {alert['price']}")
+                    alert["triggered"] = True
+
+                elif alert["condition"] == "below" and current_price <= alert["price"]:
+                    print(f"🚨 ALERT: {alert['stock']} went BELOW {alert['price']}")
+                    alert["triggered"] = True
+
+            except Exception as e:
+                print("Alert error:", e)
+
+        time.sleep(30)
+
+# Start alert checker
+threading.Thread(target=check_alerts, daemon=True).start()
+# -----------------------------------
 # PAGE ROUTES
 # -----------------------------------
+
+# -----------------------------------
+# AUTH + ALERT SYSTEM
+# -----------------------------------
+
+# Dummy storage (temporary - DB later)
+users = []
+alerts = []
+
+# -------- SIGNUP --------
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.json
+
+    user = {
+        "id": len(users) + 1,
+        "email": data['email'],
+        "password": data['password']
+    }
+
+    users.append(user)
+
+    return jsonify({"message": "User registered"})
+
+
+# -------- LOGIN --------
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+
+    for user in users:
+        if user['email'] == data['email'] and user['password'] == data['password']:
+            return jsonify({"user_id": user['id']})
+
+    return jsonify({"error": "Invalid credentials"})
+
+
+# -------- CREATE ALERT --------
+@app.route('/create-alert', methods=['POST'])
+def create_alert():
+    data = request.json
+
+    alert = {
+        "user_id": data['user_id'],
+        "stock": data['stock'],
+        "condition": data['condition'],
+        "price": float(data['price']),
+        "triggered": False
+    }
+
+    alerts.append(alert)
+
+    return jsonify({"message": "Alert created"})
+
 @app.route('/')
 def home():
     return render_template("dashboard.html")
