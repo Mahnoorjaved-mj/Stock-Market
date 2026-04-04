@@ -839,7 +839,24 @@
                 loadDashboard();
             }
         });
+        function populateStockDropdown() {
+    const dropdown = document.getElementById("stock");
+
+    if (!dropdown) return;
+
+    dropdown.innerHTML = "";
+
+    allStocksData.forEach(stock => {
+        const option = document.createElement("option");
+        option.value = stock.symbol;
+        option.textContent = stock.symbol + " - " + stock.name;
+        dropdown.appendChild(option);
+    });
+}
     </script>
+<select id="stock">
+  <option>Loading stocks...</option>
+</select>
 
 </body>
 
