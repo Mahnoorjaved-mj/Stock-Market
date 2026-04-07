@@ -1,5 +1,6 @@
 
 from flask import Flask, render_template, jsonify, request
+import sqlite3
 from flask_cors import CORS
 import traceback
 import sys
@@ -24,6 +25,25 @@ app = Flask(
     static_folder=os.path.join(BASE_DIR, "../frontend/static")
 )
 CORS(app)
+
+# ---------- DATABASE INIT ----------
+def init_db():
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE,
+        password TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+init_db()
+
 # -----------------------------------
 # LIVE DATA CACHE
 # -----------------------------------
@@ -62,6 +82,31 @@ threading.Thread(target=background_ai_training, daemon=True).start()
 # -----------------------------------
 # PAGE ROUTES
 # -----------------------------------
+
+# ---------- REGISTER USER ----------
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.json
+    email = data.get("email")
+    password = data.get("password")
+
+    try:
+        conn = sqlite3.connect("users.db")
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "INSERT INTO users (email, password) VALUES (?, ?)",
+            (email, password)
+        )
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": "User already exists"})
+    
 @app.route('/')
 def home():
     return render_template("dashboard.html")
