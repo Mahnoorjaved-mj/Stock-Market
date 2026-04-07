@@ -936,7 +936,6 @@
 function closeModal() {
     document.getElementById("alertModal").style.display = "none";
 }
-
 function registerUser() {
     const email = document.getElementById("alertEmail").value;
     const password = document.getElementById("alertPassword").value;
@@ -946,7 +945,31 @@ function registerUser() {
         return;
     }
 
-    alert("✅ Registered Successfully!");
+    fetch("http://127.0.0.1:5000/register", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            email: email,
+            password: password
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("✅ Registered Successfully!");
+
+            // modal close
+            document.getElementById("alertModal").style.display = "none";
+        } else {
+            alert("Error: " + data.message);
+        }
+    })
+    .catch(err => {
+        console.log(err);
+        alert("Something went wrong ❌");
+    });
 }
     </script>
     <!-- ALERT MODAL -->
