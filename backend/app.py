@@ -108,7 +108,31 @@ def register():
 
     except Exception as e:
         return jsonify({"status": "error", "message": "User already exists"})
-    
+
+    # ---------- LOGIN USER ----------
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    email = data.get("email")
+    password = data.get("password")
+
+    db_path = os.path.join(BASE_DIR, "users.db")
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM users WHERE email=? AND password=?",
+        (email, password)
+    )
+
+    user = cursor.fetchone()
+    conn.close()
+
+    if user:
+        return jsonify({"status": "success"})
+    else:
+        return jsonify({"status": "error", "message": "Invalid login"})
+     
 @app.route('/')
 def home():
     return render_template("dashboard.html")
