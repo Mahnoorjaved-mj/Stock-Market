@@ -28,7 +28,8 @@ CORS(app)
 
 # ---------- DATABASE INIT ----------
 def init_db():
-    conn = sqlite3.connect("users.db")
+    db_path = os.path.join(BASE_DIR, "users.db")
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -91,7 +92,8 @@ def register():
     password = data.get("password")
 
     try:
-        conn = sqlite3.connect("users.db")
+        db_path = os.path.join(BASE_DIR, "users.db")
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
         cursor.execute(
