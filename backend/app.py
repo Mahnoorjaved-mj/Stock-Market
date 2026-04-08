@@ -31,7 +31,7 @@ def get_db_connection():
         host="localhost",
         database="stock_alert_db",
         user="postgres",
-        password="YOUR_PASSWORD"
+        password="MJ123@"
     )
     
 # -----------------------------------
@@ -96,8 +96,9 @@ def register():
         return jsonify({"status": "success"})
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
-    # ---------- LOGIN USER ----------
+        return jsonify({"status": "error", "message": "User already exists"})
+    
+# ---------- LOGIN USER ----------
 @app.route("/login", methods=["POST"])
 def login():
     data = request.json
