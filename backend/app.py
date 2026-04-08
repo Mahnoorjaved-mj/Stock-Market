@@ -33,7 +33,7 @@ def get_db_connection():
         user="postgres",
         password="YOUR_PASSWORD"
     )
-
+    
 # -----------------------------------
 # LIVE DATA CACHE
 # -----------------------------------
@@ -81,23 +81,22 @@ def register():
     password = data.get("password")
 
     try:
-        db_path = os.path.join(BASE_DIR, "users.db")
-        conn = sqlite3.connect(db_path)
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         cursor.execute(
-            "INSERT INTO users (email, password) VALUES (?, ?)",
+            "INSERT INTO users (email, password) VALUES (%s, %s)",
             (email, password)
         )
 
         conn.commit()
+        cursor.close()
         conn.close()
 
         return jsonify({"status": "success"})
 
     except Exception as e:
-        return jsonify({"status": "error", "message": "User already exists"})
-
+        return jsonify({"status": "error", "message": str(e)})
     # ---------- LOGIN USER ----------
 @app.route("/login", methods=["POST"])
 def login():
