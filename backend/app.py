@@ -104,16 +104,17 @@ def login():
     email = data.get("email")
     password = data.get("password")
 
-    db_path = os.path.join(BASE_DIR, "users.db")
-    conn = sqlite3.connect(db_path)
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT * FROM users WHERE email=? AND password=?",
-        (email, password)
-    )
+    "SELECT * FROM users WHERE email=%s AND password=%s",
+    (email, password)
+)
 
     user = cursor.fetchone()
+
+    cursor.close()
     conn.close()
 
     if user:
