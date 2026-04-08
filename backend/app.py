@@ -1,6 +1,6 @@
 
 from flask import Flask, render_template, jsonify, request
-import sqlite3
+import psycopg2
 from flask_cors import CORS
 import traceback
 import sys
@@ -26,24 +26,13 @@ app = Flask(
 )
 CORS(app)
 
-# ---------- DATABASE INIT ----------
-def init_db():
-    db_path = os.path.join(BASE_DIR, "users.db")
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE,
-        password TEXT
+def get_db_connection():
+    return psycopg2.connect(
+        host="localhost",
+        database="stock_alert_db",
+        user="postgres",
+        password="YOUR_PASSWORD"
     )
-    """)
-
-    conn.commit()
-    conn.close()
-
-init_db()
 
 # -----------------------------------
 # LIVE DATA CACHE
