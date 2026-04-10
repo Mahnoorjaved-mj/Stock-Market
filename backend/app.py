@@ -1,5 +1,8 @@
 
 from flask import Flask, render_template, jsonify, request
+import random
+import smtplib
+from email.mime.text import MIMEText
 import psycopg2
 from flask_cors import CORS
 import traceback
@@ -33,6 +36,21 @@ def get_db_connection():
         user="postgres",
         password="MJ123@"
     )
+
+def send_otp_email(receiver_email, otp):
+    sender_email = "YOUR_EMAIL@gmail.com"
+    sender_password = "YOUR_APP_PASSWORD"
+
+    msg = MIMEText(f"Your OTP is: {otp}")
+    msg["Subject"] = "OTP Verification"
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(sender_email, sender_password)
+    server.send_message(msg)
+    server.quit()
     
 # -----------------------------------
 # LIVE DATA CACHE
