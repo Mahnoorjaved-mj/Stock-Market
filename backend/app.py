@@ -39,7 +39,7 @@ def get_db_connection():
 
 def send_otp_email(receiver_email, otp):
     sender_email = "mahnoorjaved823@gmail.com"
-    sender_password = "APP PASSWORD (16 digit)"
+    sender_password = "rmoxjqmjssscsequ"
 
     msg = MIMEText(f"Your OTP is: {otp}")
     msg["Subject"] = "OTP Verification"
