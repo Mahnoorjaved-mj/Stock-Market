@@ -38,8 +38,8 @@ def get_db_connection():
     )
 
 def send_otp_email(receiver_email, otp):
-    sender_email = "YOUR_EMAIL@gmail.com"
-    sender_password = "YOUR_APP_PASSWORD"
+    sender_email = "mahnoorjaved823@gmail.com"
+    sender_password = "APP PASSWORD (16 digit)"
 
     msg = MIMEText(f"Your OTP is: {otp}")
     msg["Subject"] = "OTP Verification"
@@ -51,7 +51,7 @@ def send_otp_email(receiver_email, otp):
     server.login(sender_email, sender_password)
     server.send_message(msg)
     server.quit()
-    
+
 # -----------------------------------
 # LIVE DATA CACHE
 # -----------------------------------
@@ -98,24 +98,24 @@ def register():
     email = data.get("email")
     password = data.get("password")
 
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+    otp = str(random.randint(100000, 999999))
 
-        cursor.execute(
-            "INSERT INTO users (email, password) VALUES (%s, %s)",
-            (email, password)
-        )
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-        conn.commit()
-        cursor.close()
-        conn.close()
+    cursor.execute(
+        "INSERT INTO otp_verification (email, password, otp) VALUES (%s, %s, %s)",
+        (email, password, otp)
+    )
 
-        return jsonify({"status": "success"})
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-    except Exception as e:
-        return jsonify({"status": "error", "message": "User already exists"})
-    
+    send_otp_email(email, otp)
+
+    return jsonify({"status": "otp_sent"})
+
 # ---------- LOGIN USER ----------
 @app.route("/login", methods=["POST"])
 def login():
@@ -140,6 +140,43 @@ def login():
         return jsonify({"status": "success"})
     else:
         return jsonify({"status": "error", "message": "Invalid login"})
+    
+    @app.route("/verify_otp", methods=["POST"])
+    def verify_otp():
+        data = request.json
+        email = data.get("email")
+        otp = data.get("otp")
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM otp_verification WHERE email=%s AND otp=%s ORDER BY id DESC LIMIT 1",
+        (email, otp)
+    )
+
+    record = cursor.fetchone()
+
+    if not record:
+        return jsonify({"status": "error", "message": "Invalid OTP"})
+
+    password = record[2]
+
+    cursor.execute(
+        "INSERT INTO users (email, password) VALUES (%s, %s)",
+        (email, password)
+    )
+
+    cursor.execute(
+        "DELETE FROM otp_verification WHERE email=%s",
+        (email,)
+    )
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({"status": "success"})
      
 @app.route('/')
 def home():
