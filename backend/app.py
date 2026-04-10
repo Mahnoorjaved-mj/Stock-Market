@@ -141,14 +141,14 @@ def login():
     else:
         return jsonify({"status": "error", "message": "Invalid login"})
     
-    @app.route("/verify_otp", methods=["POST"])
-    def verify_otp():
-        data = request.json
-        email = data.get("email")
-        otp = data.get("otp")
+@app.route("/verify_otp", methods=["POST"])
+def verify_otp():
+    data = request.json
+    email = data.get("email")
+    otp = data.get("otp")
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
     cursor.execute(
         "SELECT * FROM otp_verification WHERE email=%s AND otp=%s ORDER BY id DESC LIMIT 1",
@@ -158,7 +158,7 @@ def login():
     record = cursor.fetchone()
 
     if not record:
-        return jsonify({"status": "error", "message": "Invalid OTP"})
+        return jsonify({"status": "error", "message": "Invalid OTP"})  # ✅ indent fix
 
     password = record[2]
 
