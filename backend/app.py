@@ -8,7 +8,6 @@ import traceback
 import sys
 from datetime import datetime, timedelta
 import threading
-import time
 import stock_data
 from ai_predictions import ai_predictor
 import os
