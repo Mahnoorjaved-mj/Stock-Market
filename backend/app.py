@@ -147,7 +147,10 @@ def login():
     conn.close()
 
     if user:
-        return jsonify({"status": "success"})
+        return jsonify({
+        "status": "success",
+        "message": "Login successful"
+})
     else:
         return jsonify({"status": "error", "message": "Invalid login"})
     
@@ -186,7 +189,12 @@ def verify_otp():
     cursor.close()
     conn.close()
 
-    return jsonify({"status": "success"})
+    return jsonify({
+    "status": "success",
+    "message": "Account created successfully"
+})
+
+
      
 @app.route('/')
 def home():
