@@ -93,28 +93,39 @@ threading.Thread(target=background_ai_training, daemon=True).start()
 # ---------- REGISTER USER ----------
 @app.route("/register", methods=["POST"])
 def register():
-    data = request.json
-    email = data.get("email")
-    password = data.get("password")
+    try:
+        data = request.json
+        email = data.get("email")
+        password = data.get("password")
 
-    otp = str(random.randint(100000, 999999))
+        otp = str(random.randint(100000, 999999))
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-    cursor.execute(
-        "INSERT INTO otp_verification (email, password, otp) VALUES (%s, %s, %s)",
-        (email, password, otp)
-    )
+        cursor.execute(
+            "INSERT INTO otp_verification (email, password, otp) VALUES (%s, %s, %s)",
+            (email, password, otp)
+        )
 
-    conn.commit()
-    cursor.close()
-    conn.close()
+        conn.commit()
+        cursor.close()
+        conn.close()
 
-    send_otp_email(email, otp)
+        send_otp_email(email, otp)
 
-    return jsonify({"status": "otp_sent"})
+        return jsonify({
+            "status": "success",
+            "message": "OTP sent successfully"
+        })
 
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+    
 # ---------- LOGIN USER ----------
 @app.route("/login", methods=["POST"])
 def login():
