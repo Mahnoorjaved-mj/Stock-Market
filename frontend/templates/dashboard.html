@@ -955,17 +955,16 @@ function registerUser() {
             password: password
         })
     })
-    .then(res => res.json())
     .then(data => {
-        if (data.status === "success") {
-            alert("✅ Registered Successfully!");
+    console.log("REGISTER RESPONSE:", data);
 
-            // modal close
-            document.getElementById("alertModal").style.display = "none";
-        } else {
-            alert("Error: " + data.message);
-        }
-    })
+    if (data.status === "success") {
+        alert(data.message);   // 🔥 FIX
+
+    } else {
+        alert(data.message || "Something went wrong ❌");
+    }
+})
     .catch(err => {
         console.log(err);
         alert("Something went wrong ❌");
@@ -985,17 +984,17 @@ function loginUser() {
             password: password
         })
     })
-    .then(res => res.json())
     .then(data => {
-        if (data.status === "success") {
-            alert("Login Successful 🔓");
+    console.log("LOGIN RESPONSE:", data);
 
-            document.getElementById("alertModal").style.display = "none";
-        } else {
-            alert("Invalid Email or Password ❌");
-        }
-    });
-}
+    if (data.status === "success") {
+        alert(data.message);
+
+        document.getElementById("alertModal").style.display = "none";
+    } else {
+        alert(data.message || "Login failed ❌");
+    }
+});
     </script>
     <!-- ALERT MODAL -->
 <div id="alertModal" class="modal">
