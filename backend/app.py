@@ -1,4 +1,5 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, session
+app.secret_key = "secret123"
 import random
 import smtplib
 from email.mime.text import MIMEText
@@ -125,7 +126,6 @@ def register():
             "status": "error",
             "message": str(e)
         }), 500
-    
 # ---------- LOGIN USER ----------
 @app.route("/login", methods=["POST"])
 def login():
@@ -147,13 +147,18 @@ def login():
     conn.close()
 
     if user:
+        session['user'] = email   # ✅ IMPORTANT
         return jsonify({
-        "status": "success",
-        "message": "Login successful"
-})
+            "status": "success",
+            "message": "Login successful"
+        })
     else:
-        return jsonify({"status": "error", "message": "Invalid login"})
-    
+        return jsonify({
+            "status": "error",
+            "message": "Invalid login"
+        })
+
+# ---------- VERIFY OTP----------
 @app.route("/verify_otp", methods=["POST"])
 def verify_otp():
     data = request.json
@@ -193,8 +198,13 @@ def verify_otp():
     "status": "success",
     "message": "Account created successfully"
 })
-
-
+#------------AUTH------------
+@app.route('/check-auth')
+def check_auth():
+    if 'user' in session:
+        return jsonify({"logged_in": True})
+    else:
+        return jsonify({"logged_in": False})
      
 @app.route('/')
 def home():
