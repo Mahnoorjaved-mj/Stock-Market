@@ -109,16 +109,10 @@ def register():
         )
         conn.commit()
 
-        return jsonify({
-            "status": "success",
-            "message": "Account created"
-        })
+        return jsonify({"status": "success"})
 
-    except:
-        return jsonify({
-            "status": "error",
-            "message": "User already exists"
-        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": "User already exists"})
 
     finally:
         cursor.close()
