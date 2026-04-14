@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request, session
+app = Flask(__name__) 
 app.secret_key = "secret123"
 import random
 import smtplib
