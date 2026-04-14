@@ -948,38 +948,24 @@ function registerUser() {
     const email = document.getElementById("alertEmail").value;
     const password = document.getElementById("alertPassword").value;
 
-    if (!email || !password) {
-        alert("Please fill all fields");
-        return;
-    }
-
     fetch("http://127.0.0.1:5000/register", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-            email: email,
-            password: password
-        })
+        body: JSON.stringify({ email, password })
     })
     .then(res => res.json())
     .then(data => {
-    console.log("REGISTER RESPONSE:", data);
+        if (data.status === "success") {
+            alert("Account created ✅");
 
-    if (data.status === "success") {
-        alert("OTP sent! Check email 📩");
+            // 👇 direct login
+            loginUser();
 
-        document.getElementById("otpBox").style.display = "block";
-        document.getElementById("verifyBtn").style.display = "block";
-
-    } else {
-        alert(data.message || "Something went wrong ❌");
-    }
-})
-    .catch(err => {
-        console.log(err);
-        alert("Something went wrong ❌");
+        } else {
+            alert(data.message);
+        }
     });
 }
 function loginUser() {
@@ -1009,28 +995,7 @@ function loginUser() {
     }
 });
 }
-function verifyOTP() {
-    const email = document.getElementById("alertEmail").value;
-    const otp = document.getElementById("otpBox").value;
 
-    fetch("http://127.0.0.1:5000/verify_otp", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, otp })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === "success") {
-            alert("Account created successfully ✅");
-
-            document.getElementById("alertModal").style.display = "none";
-        } else {
-            alert("Wrong OTP ❌");
-        }
-    });
-}
     </script>
     <!-- ALERT MODAL -->
 <div id="alertModal" class="modal">
@@ -1039,8 +1004,6 @@ function verifyOTP() {
 
         <input type="email" placeholder="Enter Email" id="alertEmail">
         <input type="password" placeholder="Enter Password" id="alertPassword">
-        <input type="text" placeholder="Enter OTP" id="otpBox" style="display:none;">
-        <button onclick="verifyOTP()" id="verifyBtn" style="display:none;">Verify OTP</button>
 
         <button onclick="registerUser()">Register</button>
         <button onclick="loginUser()">Login</button>
