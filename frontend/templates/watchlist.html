@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Watchlist · StockSense{% endblock %}
+{% block page_title %}My Watchlist{% endblock %}
+{% block content %}
+<section class="ss-card">
+  <h3 class="ss-card-title"><i class="fas fa-plus"></i> Add a company</h3>
+  <form id="addForm" class="ss-form ss-form-inline">
+    <div style="position:relative;flex:2;min-width:240px;">
+      <input type="text" id="symbolInput" placeholder="Search symbol or name (e.g. AAPL, Tesla)" autocomplete="off" required>
+      <div id="symbolSuggest" class="ss-suggest"></div>
+    </div>
+    <input type="number" id="threshold" placeholder="Threshold % (optional)" min="0.1" max="100" step="0.1" style="flex:1;min-width:160px;">
+    <input type="number" id="targetHigh" placeholder="Alert above $ (optional)" step="0.01" min="0" style="flex:1;min-width:160px;">
+    <input type="number" id="targetLow" placeholder="Alert below $ (optional)" step="0.01" min="0" style="flex:1;min-width:160px;">
+    <button type="submit" class="ss-btn ss-btn-primary">Add</button>
+  </form>
+  <p id="addMsg" class="ss-msg"></p>
+  <p style="color:#94a3b8;font-size:13px;">Leave threshold blank to use your default from <a href="/profile" style="color:#60a5fa;">Profile</a>.</p>
+</section>
+
+<section class="ss-card" style="margin-top:20px;">
+  <h3 class="ss-card-title"><i class="fas fa-bookmark"></i> Tracked companies</h3>
+  <div style="overflow-x:auto;">
+    <table class="ss-table" id="wlTable">
+      <thead>
+        <tr>
+          <th>Symbol</th><th>Name</th><th>Price</th><th>Change</th>
+          <th>Threshold</th><th>Above</th><th>Below</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="wlBody"><tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:20px;">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+let SYMBOLS = [];
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { credentials:'same-origin', headers:{'Content-Type':'application/json'}, ...opts });
+  return res.json();
+}
+
+async function loadSymbols() {
+  const r = await api('/api/symbols');
+  SYMBOLS = r.symbols || [];
+}
+
+function suggest(q) {
+  const box = document.getElementById('symbolSuggest');
+  if (!q) { box.innerHTML = ''; box.style.display='none'; return; }
+  const ql = q.toLowerCase();
+  const matches = SYMBOLS.filter(s => s.symbol.toLowerCase().startsWith(ql) || (s.name && s.name.toLowerCase().includes(ql))).slice(0, 8);
+  if (!matches.length) { box.innerHTML = ''; box.style.display='none'; return; }
+  box.innerHTML = matches.map(s =>
+    `<div class="ss-suggest-item" data-sym="${s.symbol}"><b>${s.symbol}</b> <span style="color:#94a3b8;">${s.name}</span></div>`
+  ).join('');
+  box.style.display = 'block';
+  box.querySelectorAll('.ss-suggest-item').forEach(el => {
+    el.addEventListener('click', () => {
+      document.getElementById('symbolInput').value = el.dataset.sym;
+      box.style.display = 'none';
+    });
+  });
+}
+
+document.getElementById('symbolInput').addEventListener('input', (e) => suggest(e.target.value.trim()));
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#symbolInput') && !e.target.closest('#symbolSuggest')) {
+    document.getElementById('symbolSuggest').style.display = 'none';
+  }
+});
+
+function fmtNum(n, prec = 2) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toFixed(prec);
+}
+
+function renderRows(items) {
+  const body = document.getElementById('wlBody');
+  if (!items.length) {
+    body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:20px;">No companies yet — add one above.</td></tr>';
+    return;
+  }
+  body.innerHTML = items.map(i => {
+    const chg = i.change_percent;
+    const chgColor = chg === null ? '#94a3b8' : (chg >= 0 ? '#16a34a' : '#dc2626');
+    const chgSign = chg !== null && chg >= 0 ? '+' : '';
+    return `<tr data-id="${i.id}">
+      <td><b>${i.symbol}</b></td>
+      <td style="color:#94a3b8;">${i.name}</td>
+      <td>${fmtNum(i.price)}</td>
+      <td style="color:${chgColor};">${chg === null ? '—' : chgSign + fmtNum(chg) + '%'}</td>
+      <td><input type="number" class="ss-mini" data-f="threshold_pct" value="${i.threshold_pct ?? ''}" placeholder="default" min="0.1" max="100" step="0.1"></td>
+      <td><input type="number" class="ss-mini" data-f="target_price_high" value="${i.target_price_high ?? ''}" step="0.01" min="0"></td>
+      <td><input type="number" class="ss-mini" data-f="target_price_low" value="${i.target_price_low ?? ''}" step="0.01" min="0"></td>
+      <td>
+        <button class="ss-btn ss-btn-small ss-btn-primary" data-act="save">Save</button>
+        <button class="ss-btn ss-btn-small ss-btn-danger" data-act="del">Remove</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  body.querySelectorAll('tr').forEach(tr => {
+    const id = tr.dataset.id;
+    tr.querySelector('[data-act="save"]').addEventListener('click', async () => {
+      const body = {};
+      tr.querySelectorAll('[data-f]').forEach(inp => {
+        body[inp.dataset.f] = inp.value === '' ? null : parseFloat(inp.value);
+      });
+      const r = await api('/api/watchlist/' + id, { method:'PUT', body: JSON.stringify(body) });
+      alert(r.message || (r.status === 'success' ? 'Saved' : 'Error'));
+    });
+    tr.querySelector('[data-act="del"]').addEventListener('click', async () => {
+      if (!confirm('Remove this symbol from your watchlist?')) return;
+      const r = await api('/api/watchlist/' + id, { method:'DELETE' });
+      if (r.status === 'success') loadWatchlist();
+      else alert(r.message);
+    });
+  });
+}
+
+async function loadWatchlist() {
+  const r = await api('/api/watchlist');
+  if (r.status !== 'success') { location.href = '/login'; return; }
+  renderRows(r.items);
+}
+
+document.getElementById('addForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    symbol: document.getElementById('symbolInput').value.trim().toUpperCase(),
+    threshold_pct: document.getElementById('threshold').value || null,
+    target_price_high: document.getElementById('targetHigh').value || null,
+    target_price_low: document.getElementById('targetLow').value || null,
+  };
+  const r = await api('/api/watchlist', { method:'POST', body: JSON.stringify(body) });
+  const msg = document.getElementById('addMsg');
+  msg.textContent = r.message || (r.status === 'success' ? 'Added' : 'Error');
+  msg.style.color = r.status === 'success' ? '#16a34a' : '#dc2626';
+  if (r.status === 'success') {
+    e.target.reset();
+    loadWatchlist();
+  }
+});
+
+(async () => { await loadSymbols(); loadWatchlist(); })();
+</script>
+{% endblock %}

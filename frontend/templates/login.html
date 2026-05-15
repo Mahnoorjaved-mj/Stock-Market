@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Log in · StockSense{% endblock %}
+{% block page_title %}Log in{% endblock %}
+{% block content %}
+<div style="max-width:440px;margin:0 auto;">
+  <section class="ss-card">
+    <h3 class="ss-card-title"><i class="fas fa-right-to-bracket"></i> Welcome back</h3>
+    <form id="loginForm" class="ss-form">
+      <label>Email <input type="email" id="email" required autocomplete="email"></label>
+      <label>Password <input type="password" id="password" required autocomplete="current-password"></label>
+      <button type="submit" class="ss-btn ss-btn-primary">Log in</button>
+      <p id="msg" class="ss-msg"></p>
+    </form>
+    <p style="margin-top:14px;font-size:13.5px;color:#94a3b8;">
+      No account? <a href="/register" style="color:#60a5fa;">Create one</a><br>
+      Forgot your password? <a href="/forgot-password" style="color:#60a5fa;">Reset it</a>
+    </p>
+  </section>
+</div>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    email: document.getElementById('email').value.trim(),
+    password: document.getElementById('password').value,
+  };
+  const r = await fetch('/login', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  const data = await r.json();
+  const m = document.getElementById('msg');
+  if (data.status === 'success') {
+    m.textContent = 'Success — redirecting…'; m.style.color = '#16a34a';
+    setTimeout(() => location.href = '/watchlist', 600);
+  } else {
+    m.textContent = data.message || 'Login failed'; m.style.color = '#dc2626';
+  }
+});
+</script>
+{% endblock %}

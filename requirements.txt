@@ -4,3 +4,12 @@ numpy
 pandas
 scikit-learn
 matplotlib
+Flask>=2.3
+Flask-Cors
+psycopg2-binary
+bcrypt>=4.0
+APScheduler>=3.10
+email-validator>=2.0
+pytz
+yfinance
+Jinja2>=3.1

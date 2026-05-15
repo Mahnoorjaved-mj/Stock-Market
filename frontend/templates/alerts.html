@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Alerts · StockSense{% endblock %}
+{% block page_title %}Alerts & Notifications{% endblock %}
+{% block content %}
+<section class="ss-card">
+  <h3 class="ss-card-title"><i class="fas fa-sliders"></i> Settings</h3>
+  <p style="color:#94a3b8;font-size:13.5px;">Manage your default threshold and digest preferences from your <a href="/profile" style="color:#60a5fa;">Profile</a>. Per-stock thresholds and targets live on the <a href="/watchlist" style="color:#60a5fa;">Watchlist</a>.</p>
+  <button id="runBtn" class="ss-btn ss-btn-primary"><i class="fas fa-bolt"></i> Run an alert sweep now</button>
+  <p id="runMsg" class="ss-msg"></p>
+</section>
+
+<section class="ss-card" style="margin-top:20px;">
+  <h3 class="ss-card-title"><i class="fas fa-clock-rotate-left"></i> Recent alerts</h3>
+  <div style="overflow-x:auto;">
+    <table class="ss-table">
+      <thead>
+        <tr><th>When</th><th>Symbol</th><th>Type</th><th>Price</th><th>Change %</th></tr>
+      </thead>
+      <tbody id="histBody"><tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+async function api(p, opts={}) {
+  const r = await fetch(p, { credentials:'same-origin', headers:{'Content-Type':'application/json'}, ...opts });
+  return r.json();
+}
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString();
+}
+function typeLabel(t) {
+  return { pct_move: '% Move', target_high: 'Above target', target_low: 'Below target' }[t] || t;
+}
+async function load() {
+  const r = await api('/api/alerts/history');
+  const tb = document.getElementById('histBody');
+  if (r.status !== 'success') { location.href = '/login'; return; }
+  if (!r.items.length) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">No alerts yet.</td></tr>';
+    return;
+  }
+  tb.innerHTML = r.items.map(i => {
+    const c = i.change_pct === null ? '#94a3b8' : (i.change_pct >= 0 ? '#16a34a' : '#dc2626');
+    const sign = i.change_pct !== null && i.change_pct >= 0 ? '+' : '';
+    return `<tr>
+      <td>${fmtDate(i.sent_at)}</td>
+      <td><b>${i.symbol}</b></td>
+      <td>${typeLabel(i.alert_type)}</td>
+      <td>${i.price.toFixed(2)}</td>
+      <td style="color:${c};">${i.change_pct === null ? '—' : sign + i.change_pct.toFixed(2) + '%'}</td>
+    </tr>`;
+  }).join('');
+}
+document.getElementById('runBtn').addEventListener('click', async () => {
+  const m = document.getElementById('runMsg');
+  m.textContent = 'Running…'; m.style.color = '#94a3b8';
+  const r = await api('/api/alerts/run-now', { method:'POST' });
+  if (r.status === 'success') {
+    m.textContent = `Sweep complete — sent: ${r.summary.sent}, skipped: ${r.summary.skipped}, errors: ${r.summary.errors}`;
+    m.style.color = '#16a34a';
+    setTimeout(load, 600);
+  } else {
+    m.textContent = r.message || 'Error';
+    m.style.color = '#dc2626';
+  }
+});
+load();
+</script>
+{% endblock %}

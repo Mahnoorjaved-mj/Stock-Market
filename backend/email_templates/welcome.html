@@ -1,0 +1,13 @@
+{% extends "_base.html" %}
+{% block subject %}Welcome to StockSense{% endblock %}
+{% block body %}
+<h2 style="margin:0 0 14px;color:#fff;font-size:22px;">Welcome, {{ name }}!</h2>
+<p>Your StockSense account is ready. Here's what you can do next:</p>
+<ul style="padding-left:20px;line-height:1.9;">
+  <li>Build a <b>watchlist</b> of companies you care about.</li>
+  <li>Get <b>email alerts</b> when a watchlist stock moves beyond your threshold.</li>
+  <li>Track a <b>simulated portfolio</b> with live P/L.</li>
+  <li>Receive <b>AI-powered picks</b> personalized to your sectors.</li>
+</ul>
+<p style="margin-top:22px;"><a href="{{ base_url }}/watchlist" style="background:#3b82f6;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:600;">Open your dashboard</a></p>
+{% endblock %}

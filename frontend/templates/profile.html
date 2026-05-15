@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Profile · StockSense{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block content %}
+<div class="ss-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:24px;">
+
+  <!-- Account info -->
+  <section class="ss-card">
+    <h3 class="ss-card-title"><i class="fas fa-user"></i> Account</h3>
+    <form id="profileForm" class="ss-form">
+      <label>Email <input type="email" id="email" disabled></label>
+      <label>Name <input type="text" id="name" placeholder="Your name"></label>
+      <label>Default alert threshold (%)
+        <input type="number" id="alert_threshold_pct" min="0.1" max="100" step="0.1">
+        <small>Watchlist stocks fire an alert when |daily change| crosses this.</small>
+      </label>
+      <label>Digest emails
+        <select id="digest_frequency">
+          <option value="off">Off</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
+      </label>
+      <label id="digestDayWrap">Weekly digest day
+        <select id="digest_day">
+          <option value="0">Monday</option>
+          <option value="1">Tuesday</option>
+          <option value="2">Wednesday</option>
+          <option value="3">Thursday</option>
+          <option value="4">Friday</option>
+          <option value="5">Saturday</option>
+          <option value="6">Sunday</option>
+        </select>
+      </label>
+      <button type="submit" class="ss-btn ss-btn-primary">Save changes</button>
+      <p id="profileMsg" class="ss-msg"></p>
+    </form>
+  </section>
+
+  <!-- Change password -->
+  <section class="ss-card">
+    <h3 class="ss-card-title"><i class="fas fa-lock"></i> Change password</h3>
+    <form id="pwForm" class="ss-form">
+      <label>Current password <input type="password" id="old_password" required></label>
+      <label>New password
+        <input type="password" id="new_password" required minlength="8">
+        <small>At least 8 characters with a letter and a digit.</small>
+      </label>
+      <button type="submit" class="ss-btn ss-btn-primary">Update password</button>
+      <p id="pwMsg" class="ss-msg"></p>
+    </form>
+  </section>
+
+  <!-- Danger zone -->
+  <section class="ss-card ss-danger-zone">
+    <h3 class="ss-card-title"><i class="fas fa-triangle-exclamation"></i> Danger zone</h3>
+    <p style="color:#94a3b8;font-size:14px;">Deleting your account removes your watchlist, portfolio, and alert history. This is irreversible.</p>
+    <button id="deleteBtn" class="ss-btn ss-btn-danger">Delete my account</button>
+    <p id="delMsg" class="ss-msg"></p>
+  </section>
+
+  <!-- Logout -->
+  <section class="ss-card">
+    <h3 class="ss-card-title"><i class="fas fa-right-from-bracket"></i> Session</h3>
+    <button id="logoutBtn" class="ss-btn">Log out</button>
+  </section>
+</div>
+
+<script>
+async function api(path, opts = {}) {
+  const res = await fetch(path, { credentials: 'same-origin', headers: {'Content-Type':'application/json'}, ...opts });
+  return res.json();
+}
+
+function setMsg(id, text, ok) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.style.color = ok ? '#16a34a' : '#dc2626';
+}
+
+async function loadProfile() {
+  const data = await api('/api/profile');
+  if (data.status !== 'success') {
+    if (data.message && data.message.toLowerCase().includes('auth')) location.href = '/login';
+    return;
+  }
+  const p = data.profile;
+  document.getElementById('email').value = p.email;
+  document.getElementById('name').value = p.name || '';
+  document.getElementById('alert_threshold_pct').value = p.alert_threshold_pct;
+  document.getElementById('digest_frequency').value = p.digest_frequency;
+  document.getElementById('digest_day').value = p.digest_day;
+  toggleDigestDay();
+}
+
+function toggleDigestDay() {
+  const freq = document.getElementById('digest_frequency').value;
+  document.getElementById('digestDayWrap').style.display = freq === 'weekly' ? '' : 'none';
+}
+
+document.getElementById('digest_frequency').addEventListener('change', toggleDigestDay);
+
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    name: document.getElementById('name').value,
+    alert_threshold_pct: parseFloat(document.getElementById('alert_threshold_pct').value),
+    digest_frequency: document.getElementById('digest_frequency').value,
+    digest_day: parseInt(document.getElementById('digest_day').value, 10),
+  };
+  const r = await api('/api/profile', { method: 'PUT', body: JSON.stringify(body) });
+  setMsg('profileMsg', r.message || (r.status === 'success' ? 'Saved' : 'Error'), r.status === 'success');
+});
+
+document.getElementById('pwForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    old_password: document.getElementById('old_password').value,
+    new_password: document.getElementById('new_password').value,
+  };
+  const r = await api('/api/change-password', { method: 'POST', body: JSON.stringify(body) });
+  setMsg('pwMsg', r.message || (r.status === 'success' ? 'Updated' : 'Error'), r.status === 'success');
+  if (r.status === 'success') e.target.reset();
+});
+
+document.getElementById('deleteBtn').addEventListener('click', async () => {
+  if (!confirm('Delete your account and all associated data? This cannot be undone.')) return;
+  const r = await api('/api/profile', { method: 'DELETE' });
+  setMsg('delMsg', r.message || '', r.status === 'success');
+  if (r.status === 'success') setTimeout(() => location.href = '/', 800);
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await api('/logout', { method: 'POST' });
+  location.href = '/';
+});
+
+loadProfile();
+</script>
+{% endblock %}

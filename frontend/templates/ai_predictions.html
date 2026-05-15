@@ -6,36 +6,35 @@
 {% block content %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js">
 <style>
-    :root {
-        --primary: #2563eb;
+    /* Local semantic aliases — theme tokens come from base.html */
+    .ai-page {
+        --primary: var(--accent-blue);
         --success: #16a34a;
         --danger: #dc2626;
         --warning: #f59e0b;
-        --card-bg: rgba(255,255,255,0.06);
-        --text-primary: #ffffff;
-        --text-secondary: #94a3b8;
     }
-    
+
     /* AI Section */
     .ai-header {
         background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: #ffffff;
         padding: 25px;
         border-radius: 15px;
         margin-bottom: 30px;
         text-align: center;
     }
-    
+
     .ai-header h2 {
         font-size: 28px;
         margin-bottom: 10px;
     }
-    
+
     .ai-header p {
         color: #dbeafe;
         max-width: 800px;
         margin: 0 auto;
     }
-    
+
     /* Cards Grid */
     .cards-grid {
         display: grid;
@@ -43,15 +42,16 @@
         gap: 25px;
         margin-bottom: 40px;
     }
-    
+
     .card {
         background: var(--card-bg);
+        color: var(--text-primary);
         border-radius: 15px;
         padding: 25px;
-        transition: transform 0.3s;
-        border: 1px solid rgba(255,255,255,0.1);
+        transition: transform 0.3s, background 0.3s ease, border-color 0.3s ease;
+        border: 1px solid var(--border-color);
     }
-    
+
     .card:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 25px rgba(0,0,0,0.2);
@@ -67,7 +67,7 @@
     .card-title {
         font-size: 18px;
         font-weight: 600;
-        color: var(--text-secondary);
+        color: var(--text-primary);
     }
     
     .sentiment-badge {
@@ -99,7 +99,8 @@
     }
     
     .pick-card {
-        background: rgba(255,255,255,0.05);
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
         border-radius: 12px;
         padding: 20px;
         display: flex;
@@ -107,16 +108,17 @@
         gap: 15px;
         transition: all 0.3s;
     }
-    
+
     .pick-card:hover {
-        background: rgba(255,255,255,0.08);
+        background: var(--hover-bg);
         transform: translateY(-3px);
     }
-    
+
     .pick-rank {
         width: 40px;
         height: 40px;
-        background: var(--primary);
+        background: var(--accent-blue);
+        color: #ffffff;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -143,7 +145,7 @@
     
     .pick-confidence {
         font-size: 14px;
-        color: #94a3b8;
+        color: var(--text-secondary);
         margin-top: 5px;
     }
     
@@ -163,7 +165,7 @@
     }
     
     .btn {
-        background: var(--primary);
+        background: var(--accent-blue);
         color: white;
         border: none;
         padding: 12px 24px;
@@ -175,48 +177,48 @@
         font-weight: 600;
         transition: background 0.3s;
     }
-    
+
     .btn:hover {
         background: #1d4ed8;
     }
-    
-    .btn-success { background: var(--success); }
+
+    .btn-success { background: #16a34a; }
     .btn-success:hover { background: #15803d; }
-    
-    .btn-warning { background: var(--warning); }
+
+    .btn-warning { background: #f59e0b; }
     .btn-warning:hover { background: #d97706; }
-    
+
     .input-group {
         flex: 1;
         max-width: 400px;
     }
-    
+
     .input-group input {
         width: 100%;
         padding: 12px 20px;
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.1);
+        background: var(--input-bg);
+        border: 1px solid var(--input-border);
         border-radius: 8px;
-        color: white;
+        color: var(--text-primary);
         font-size: 16px;
     }
-    
+
     .input-group input:focus {
         outline: none;
-        border-color: var(--primary);
+        border-color: var(--accent-blue);
     }
-    
+
     /* Loading */
     .loading {
         text-align: center;
         padding: 40px;
-        color: #94a3b8;
+        color: var(--text-secondary);
     }
-    
+
     .spinner {
-        border: 4px solid rgba(255,255,255,0.1);
+        border: 4px solid var(--border-color);
         border-radius: 50%;
-        border-top: 4px solid var(--primary);
+        border-top: 4px solid var(--accent-blue);
         width: 40px;
         height: 40px;
         animation: spin 1s linear infinite;

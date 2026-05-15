@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}StockSense{% endblock %}</title>
+    <script>
+        // Pre-paint theme load — runs before stylesheet to avoid flash of wrong theme.
+        (function () {
+            var saved = localStorage.getItem('theme');
+            if (saved !== 'light' && saved !== 'dark') saved = 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
@@ -13,28 +21,60 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         :root {
-            --sidebar-bg: #0b0f19;
-            --primary-blue: #3b82f6;
+            --bg-page-start: #0f172a;
+            --bg-page-end: #1e293b;
+            --bg-sidebar: #0b0f19;
+            --bg-header: rgba(15, 23, 42, 0.8);
+            --accent-blue: #3b82f6;
+            --accent-blue-soft: #60a5fa;
             --text-primary: #ffffff;
             --text-secondary: #94a3b8;
             --card-bg: rgba(255, 255, 255, 0.06);
             --hover-bg: rgba(255, 255, 255, 0.08);
             --border-color: rgba(255, 255, 255, 0.1);
+            --input-bg: #0b0f19;
+            --input-border: rgba(255, 255, 255, 0.1);
+            --footer-bg: #0b0f19;
+            --modal-bg: #0f172a;
+            /* Legacy aliases used by older inline templates */
+            --primary-blue: #3b82f6;
+            --sidebar-bg: #0b0f19;
         }
-        
+
+        :root[data-theme="light"] {
+            --bg-page-start: #f1f5f9;
+            --bg-page-end: #e2e8f0;
+            --bg-sidebar: #ffffff;
+            --bg-header: rgba(255, 255, 255, 0.85);
+            --accent-blue: #2563eb;
+            --accent-blue-soft: #3b82f6;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --card-bg: #ffffff;
+            --hover-bg: rgba(15, 23, 42, 0.05);
+            --border-color: rgba(15, 23, 42, 0.12);
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --footer-bg: #f8fafc;
+            --modal-bg: #ffffff;
+            --primary-blue: #2563eb;
+            --sidebar-bg: #ffffff;
+        }
+
         body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background: linear-gradient(135deg, var(--bg-page-start) 0%, var(--bg-page-end) 100%);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
+            transition: background 0.3s ease, color 0.3s ease;
         }
-        
+
         /* Sidebar */
         .sidebar {
             width: 250px;
-            background: var(--sidebar-bg);
+            background: var(--bg-sidebar);
             padding: 30px 0;
             height: 100vh;
             position: fixed;
@@ -42,6 +82,7 @@
             top: 0;
             border-right: 1px solid var(--border-color);
             z-index: 100;
+            transition: background 0.3s ease, border-color 0.3s ease;
         }
         
         .logo-container {
@@ -93,8 +134,8 @@
         
         .nav-link.active {
             background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), transparent);
-            color: var(--primary-blue);
-            border-left: 3px solid var(--primary-blue);
+            color: var(--accent-blue);
+            border-left: 3px solid var(--accent-blue);
         }
         
         .nav-link i {
@@ -113,36 +154,57 @@
         }
         
         .top-header {
-            background: rgba(15, 23, 42, 0.8);
+            background: var(--bg-header);
             backdrop-filter: blur(10px);
             padding: 20px 30px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background 0.3s ease, border-color 0.3s ease;
         }
-        
+
         .page-title {
             font-size: 28px;
             font-weight: 700;
-            background: linear-gradient(45deg, #60a5fa, #3b82f6);
+            background: linear-gradient(45deg, var(--accent-blue-soft), var(--accent-blue));
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        
+
         .user-info {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
-        
+
+        .theme-toggle {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+        .theme-toggle:hover {
+            background: var(--hover-bg);
+            transform: translateY(-1px);
+        }
+
         .time-display {
             background: var(--card-bg);
             padding: 8px 16px;
             border-radius: 8px;
             font-size: 14px;
             font-weight: 500;
+            color: var(--text-primary);
             border: 1px solid var(--border-color);
         }
         
@@ -155,12 +217,13 @@
         
         /* Footer */
         .footer {
-            background: var(--sidebar-bg);
+            background: var(--footer-bg);
             padding: 20px 30px;
             text-align: center;
             color: var(--text-secondary);
             font-size: 14px;
             border-top: 1px solid var(--border-color);
+            transition: background 0.3s ease, border-color 0.3s ease;
         }
         
         /* Mobile Responsive */
@@ -243,19 +306,43 @@
                 <i class="fas fa-chart-line"></i>
                 <span>Dashboard</span>
             </a>
-            
+
             <a href="/ai_predictions" class="nav-link">
                 <i class="fas fa-robot"></i>
                 <span>AI Predictions</span>
             </a>
-            
+
             <a href="/market_analysis" class="nav-link">
                 <i class="fas fa-chart-bar"></i>
                 <span>Market Analysis</span>
             </a>
-            <a href="/alerts" class="nav-link">
-               <i class="fas fa-bell"></i>
-               <span>Alerts</span>
+
+            <!-- Logged-in only -->
+            <a href="/watchlist" class="nav-link nav-auth" style="display:none;">
+                <i class="fas fa-bookmark"></i>
+                <span>Watchlist</span>
+            </a>
+            <a href="/portfolio" class="nav-link nav-auth" style="display:none;">
+                <i class="fas fa-briefcase"></i>
+                <span>Portfolio</span>
+            </a>
+            <a href="/alerts" class="nav-link nav-auth" style="display:none;">
+                <i class="fas fa-bell"></i>
+                <span>Alerts</span>
+            </a>
+            <a href="/profile" class="nav-link nav-auth" style="display:none;">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+
+            <!-- Logged-out only -->
+            <a href="/login" class="nav-link nav-guest" style="display:none;">
+                <i class="fas fa-right-to-bracket"></i>
+                <span>Log in</span>
+            </a>
+            <a href="/register" class="nav-link nav-guest" style="display:none;">
+                <i class="fas fa-user-plus"></i>
+                <span>Sign up</span>
             </a>
         </div>
     </nav>
@@ -265,6 +352,9 @@
         <header class="top-header">
             <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
             <div class="user-info">
+                <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme" title="Toggle dark/light">
+                    <i class="fas fa-moon"></i>
+                </button>
                 <div class="time-display" id="current-time">--:--:--</div>
             </div>
         </header>
@@ -282,7 +372,7 @@
         // Update current time
         function updateTime() {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-US', { 
+            const timeStr = now.toLocaleTimeString('en-US', {
                 hour12: false,
                 hour: '2-digit',
                 minute: '2-digit',
@@ -290,26 +380,49 @@
             });
             document.getElementById('current-time').textContent = timeStr;
         }
-        
+
         // Update time immediately and every second
         updateTime();
         setInterval(updateTime, 1000);
-        
-        // Set active link based on current URL
+
+        // Theme toggle
+        function syncThemeIcon() {
+            const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const icon = document.querySelector('#themeToggle i');
+            if (!icon) return;
+            icon.className = theme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.nav-link');
-            
-            navLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
-                } else {
-                    link.classList.remove('active');
-                }
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if (link.getAttribute('href') === currentPath) link.classList.add('active');
+                else link.classList.remove('active');
             });
+
+            // Auth-aware sidebar
+            fetch('/check-auth', { credentials: 'same-origin' })
+                .then(r => r.json())
+                .then(d => {
+                    const loggedIn = !!d.logged_in;
+                    document.querySelectorAll('.nav-auth').forEach(el => el.style.display = loggedIn ? '' : 'none');
+                    document.querySelectorAll('.nav-guest').forEach(el => el.style.display = loggedIn ? 'none' : '');
+                })
+                .catch(() => {});
+
+            // Theme toggle wiring
+            syncThemeIcon();
+            const btn = document.getElementById('themeToggle');
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+                    const next = current === 'light' ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', next);
+                    try { localStorage.setItem('theme', next); } catch (e) {}
+                    syncThemeIcon();
+                });
+            }
         });
     </script>
-    
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

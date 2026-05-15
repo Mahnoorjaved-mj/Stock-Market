@@ -9,11 +9,17 @@ import concurrent.futures
 from typing import Dict, List, Any
 import requests
 import json
+import os
 
 print("Loading Real-Time Global Stocks Dashboard with Alpha Vantage")
 
 
-ALPHA_VANTAGE_API_KEY = "S7ULZPIQ8OSIWQV8"
+# Prefer env var; fall back to historical hardcoded key so existing deployments keep working
+try:
+    from config import config as _cfg
+    ALPHA_VANTAGE_API_KEY = _cfg.ALPHA_VANTAGE_KEY or os.getenv("ALPHA_VANTAGE_KEY", "S7ULZPIQ8OSIWQV8")
+except Exception:
+    ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_KEY", "S7ULZPIQ8OSIWQV8")
 
 class StockDataFetcher:
     """Real-time stock data fetcher using Alpha Vantage as primary source"""
@@ -246,6 +252,323 @@ class StockDataFetcher:
 # Global fetcher instance
 fetcher = StockDataFetcher()
 
+
+# =====================================================================
+# STOCK UNIVERSE - 250+ curated global tickers
+# Module-level so other modules (watchlist, alerts) can read it.
+# =====================================================================
+STOCK_DEFINITIONS: List[Dict[str, str]] = [
+    # ============ UNITED STATES - Tech ============
+    {"symbol": "AAPL",  "country": "US", "currency": "USD", "name": "Apple Inc.", "sector": "Technology"},
+    {"symbol": "MSFT",  "country": "US", "currency": "USD", "name": "Microsoft Corporation", "sector": "Technology"},
+    {"symbol": "GOOGL", "country": "US", "currency": "USD", "name": "Alphabet Inc. (Class A)", "sector": "Technology"},
+    {"symbol": "GOOG",  "country": "US", "currency": "USD", "name": "Alphabet Inc. (Class C)", "sector": "Technology"},
+    {"symbol": "META",  "country": "US", "currency": "USD", "name": "Meta Platforms Inc.", "sector": "Technology"},
+    {"symbol": "NVDA",  "country": "US", "currency": "USD", "name": "NVIDIA Corporation", "sector": "Technology"},
+    {"symbol": "AMD",   "country": "US", "currency": "USD", "name": "Advanced Micro Devices", "sector": "Technology"},
+    {"symbol": "INTC",  "country": "US", "currency": "USD", "name": "Intel Corporation", "sector": "Technology"},
+    {"symbol": "AVGO",  "country": "US", "currency": "USD", "name": "Broadcom Inc.", "sector": "Technology"},
+    {"symbol": "QCOM",  "country": "US", "currency": "USD", "name": "Qualcomm", "sector": "Technology"},
+    {"symbol": "TXN",   "country": "US", "currency": "USD", "name": "Texas Instruments", "sector": "Technology"},
+    {"symbol": "MU",    "country": "US", "currency": "USD", "name": "Micron Technology", "sector": "Technology"},
+    {"symbol": "AMAT",  "country": "US", "currency": "USD", "name": "Applied Materials", "sector": "Technology"},
+    {"symbol": "LRCX",  "country": "US", "currency": "USD", "name": "Lam Research", "sector": "Technology"},
+    {"symbol": "KLAC",  "country": "US", "currency": "USD", "name": "KLA Corporation", "sector": "Technology"},
+    {"symbol": "ADBE",  "country": "US", "currency": "USD", "name": "Adobe Inc.", "sector": "Technology"},
+    {"symbol": "CRM",   "country": "US", "currency": "USD", "name": "Salesforce", "sector": "Technology"},
+    {"symbol": "ORCL",  "country": "US", "currency": "USD", "name": "Oracle Corporation", "sector": "Technology"},
+    {"symbol": "IBM",   "country": "US", "currency": "USD", "name": "IBM", "sector": "Technology"},
+    {"symbol": "CSCO",  "country": "US", "currency": "USD", "name": "Cisco Systems", "sector": "Technology"},
+    {"symbol": "ACN",   "country": "US", "currency": "USD", "name": "Accenture", "sector": "Technology"},
+    {"symbol": "NOW",   "country": "US", "currency": "USD", "name": "ServiceNow", "sector": "Technology"},
+    {"symbol": "INTU",  "country": "US", "currency": "USD", "name": "Intuit", "sector": "Technology"},
+    {"symbol": "PANW",  "country": "US", "currency": "USD", "name": "Palo Alto Networks", "sector": "Technology"},
+    {"symbol": "CRWD",  "country": "US", "currency": "USD", "name": "CrowdStrike", "sector": "Technology"},
+    {"symbol": "SNOW",  "country": "US", "currency": "USD", "name": "Snowflake", "sector": "Technology"},
+    {"symbol": "PLTR",  "country": "US", "currency": "USD", "name": "Palantir Technologies", "sector": "Technology"},
+    {"symbol": "DDOG",  "country": "US", "currency": "USD", "name": "Datadog", "sector": "Technology"},
+    {"symbol": "NET",   "country": "US", "currency": "USD", "name": "Cloudflare", "sector": "Technology"},
+    {"symbol": "ZS",    "country": "US", "currency": "USD", "name": "Zscaler", "sector": "Technology"},
+
+    # ============ US - Internet / Commerce / Media ============
+    {"symbol": "AMZN",  "country": "US", "currency": "USD", "name": "Amazon.com Inc.", "sector": "E-commerce"},
+    {"symbol": "NFLX",  "country": "US", "currency": "USD", "name": "Netflix Inc.", "sector": "Entertainment"},
+    {"symbol": "DIS",   "country": "US", "currency": "USD", "name": "Walt Disney Company", "sector": "Entertainment"},
+    {"symbol": "TSLA",  "country": "US", "currency": "USD", "name": "Tesla Inc.", "sector": "Automotive"},
+    {"symbol": "UBER",  "country": "US", "currency": "USD", "name": "Uber Technologies", "sector": "Transport"},
+    {"symbol": "LYFT",  "country": "US", "currency": "USD", "name": "Lyft Inc.", "sector": "Transport"},
+    {"symbol": "ABNB",  "country": "US", "currency": "USD", "name": "Airbnb", "sector": "Travel"},
+    {"symbol": "BKNG",  "country": "US", "currency": "USD", "name": "Booking Holdings", "sector": "Travel"},
+    {"symbol": "EBAY",  "country": "US", "currency": "USD", "name": "eBay", "sector": "E-commerce"},
+    {"symbol": "ETSY",  "country": "US", "currency": "USD", "name": "Etsy", "sector": "E-commerce"},
+    {"symbol": "PINS",  "country": "US", "currency": "USD", "name": "Pinterest", "sector": "Technology"},
+    {"symbol": "SNAP",  "country": "US", "currency": "USD", "name": "Snap Inc.", "sector": "Technology"},
+    {"symbol": "SPOT",  "country": "US", "currency": "USD", "name": "Spotify", "sector": "Entertainment"},
+    {"symbol": "WBD",   "country": "US", "currency": "USD", "name": "Warner Bros. Discovery", "sector": "Entertainment"},
+    {"symbol": "PARA",  "country": "US", "currency": "USD", "name": "Paramount Global", "sector": "Entertainment"},
+    {"symbol": "EA",    "country": "US", "currency": "USD", "name": "Electronic Arts", "sector": "Gaming"},
+    {"symbol": "TTWO",  "country": "US", "currency": "USD", "name": "Take-Two Interactive", "sector": "Gaming"},
+    {"symbol": "RBLX",  "country": "US", "currency": "USD", "name": "Roblox", "sector": "Gaming"},
+
+    # ============ US - Finance ============
+    {"symbol": "JPM",   "country": "US", "currency": "USD", "name": "JPMorgan Chase", "sector": "Finance"},
+    {"symbol": "BAC",   "country": "US", "currency": "USD", "name": "Bank of America", "sector": "Finance"},
+    {"symbol": "WFC",   "country": "US", "currency": "USD", "name": "Wells Fargo", "sector": "Finance"},
+    {"symbol": "C",     "country": "US", "currency": "USD", "name": "Citigroup", "sector": "Finance"},
+    {"symbol": "GS",    "country": "US", "currency": "USD", "name": "Goldman Sachs", "sector": "Finance"},
+    {"symbol": "MS",    "country": "US", "currency": "USD", "name": "Morgan Stanley", "sector": "Finance"},
+    {"symbol": "BLK",   "country": "US", "currency": "USD", "name": "BlackRock", "sector": "Finance"},
+    {"symbol": "SCHW",  "country": "US", "currency": "USD", "name": "Charles Schwab", "sector": "Finance"},
+    {"symbol": "AXP",   "country": "US", "currency": "USD", "name": "American Express", "sector": "Finance"},
+    {"symbol": "V",     "country": "US", "currency": "USD", "name": "Visa Inc.", "sector": "Finance"},
+    {"symbol": "MA",    "country": "US", "currency": "USD", "name": "Mastercard", "sector": "Finance"},
+    {"symbol": "PYPL",  "country": "US", "currency": "USD", "name": "PayPal Holdings", "sector": "Finance"},
+    {"symbol": "SQ",    "country": "US", "currency": "USD", "name": "Block (Square)", "sector": "Finance"},
+    {"symbol": "COIN",  "country": "US", "currency": "USD", "name": "Coinbase", "sector": "Finance"},
+    {"symbol": "HOOD",  "country": "US", "currency": "USD", "name": "Robinhood", "sector": "Finance"},
+    {"symbol": "BRK.B", "country": "US", "currency": "USD", "name": "Berkshire Hathaway", "sector": "Finance"},
+    {"symbol": "SPGI",  "country": "US", "currency": "USD", "name": "S&P Global", "sector": "Finance"},
+    {"symbol": "MCO",   "country": "US", "currency": "USD", "name": "Moody's", "sector": "Finance"},
+    {"symbol": "ICE",   "country": "US", "currency": "USD", "name": "Intercontinental Exchange", "sector": "Finance"},
+    {"symbol": "CME",   "country": "US", "currency": "USD", "name": "CME Group", "sector": "Finance"},
+
+    # ============ US - Healthcare / Pharma ============
+    {"symbol": "JNJ",   "country": "US", "currency": "USD", "name": "Johnson & Johnson", "sector": "Healthcare"},
+    {"symbol": "LLY",   "country": "US", "currency": "USD", "name": "Eli Lilly", "sector": "Healthcare"},
+    {"symbol": "ABBV",  "country": "US", "currency": "USD", "name": "AbbVie", "sector": "Healthcare"},
+    {"symbol": "MRK",   "country": "US", "currency": "USD", "name": "Merck & Co.", "sector": "Healthcare"},
+    {"symbol": "PFE",   "country": "US", "currency": "USD", "name": "Pfizer", "sector": "Healthcare"},
+    {"symbol": "ABT",   "country": "US", "currency": "USD", "name": "Abbott Laboratories", "sector": "Healthcare"},
+    {"symbol": "TMO",   "country": "US", "currency": "USD", "name": "Thermo Fisher Scientific", "sector": "Healthcare"},
+    {"symbol": "DHR",   "country": "US", "currency": "USD", "name": "Danaher", "sector": "Healthcare"},
+    {"symbol": "BMY",   "country": "US", "currency": "USD", "name": "Bristol-Myers Squibb", "sector": "Healthcare"},
+    {"symbol": "AMGN",  "country": "US", "currency": "USD", "name": "Amgen", "sector": "Healthcare"},
+    {"symbol": "GILD",  "country": "US", "currency": "USD", "name": "Gilead Sciences", "sector": "Healthcare"},
+    {"symbol": "VRTX",  "country": "US", "currency": "USD", "name": "Vertex Pharmaceuticals", "sector": "Healthcare"},
+    {"symbol": "REGN",  "country": "US", "currency": "USD", "name": "Regeneron", "sector": "Healthcare"},
+    {"symbol": "ISRG",  "country": "US", "currency": "USD", "name": "Intuitive Surgical", "sector": "Healthcare"},
+    {"symbol": "MDT",   "country": "US", "currency": "USD", "name": "Medtronic", "sector": "Healthcare"},
+    {"symbol": "UNH",   "country": "US", "currency": "USD", "name": "UnitedHealth Group", "sector": "Healthcare"},
+    {"symbol": "CI",    "country": "US", "currency": "USD", "name": "Cigna", "sector": "Healthcare"},
+    {"symbol": "CVS",   "country": "US", "currency": "USD", "name": "CVS Health", "sector": "Healthcare"},
+    {"symbol": "HUM",   "country": "US", "currency": "USD", "name": "Humana", "sector": "Healthcare"},
+    {"symbol": "MRNA",  "country": "US", "currency": "USD", "name": "Moderna", "sector": "Healthcare"},
+
+    # ============ US - Consumer / Retail ============
+    {"symbol": "WMT",   "country": "US", "currency": "USD", "name": "Walmart Inc.", "sector": "Retail"},
+    {"symbol": "COST",  "country": "US", "currency": "USD", "name": "Costco Wholesale", "sector": "Retail"},
+    {"symbol": "TGT",   "country": "US", "currency": "USD", "name": "Target", "sector": "Retail"},
+    {"symbol": "HD",    "country": "US", "currency": "USD", "name": "Home Depot", "sector": "Retail"},
+    {"symbol": "LOW",   "country": "US", "currency": "USD", "name": "Lowe's", "sector": "Retail"},
+    {"symbol": "BBY",   "country": "US", "currency": "USD", "name": "Best Buy", "sector": "Retail"},
+    {"symbol": "KR",    "country": "US", "currency": "USD", "name": "Kroger", "sector": "Retail"},
+    {"symbol": "DG",    "country": "US", "currency": "USD", "name": "Dollar General", "sector": "Retail"},
+    {"symbol": "DLTR",  "country": "US", "currency": "USD", "name": "Dollar Tree", "sector": "Retail"},
+    {"symbol": "PG",    "country": "US", "currency": "USD", "name": "Procter & Gamble", "sector": "Consumer"},
+    {"symbol": "KO",    "country": "US", "currency": "USD", "name": "Coca-Cola", "sector": "Consumer"},
+    {"symbol": "PEP",   "country": "US", "currency": "USD", "name": "PepsiCo", "sector": "Consumer"},
+    {"symbol": "MDLZ",  "country": "US", "currency": "USD", "name": "Mondelez International", "sector": "Consumer"},
+    {"symbol": "CL",    "country": "US", "currency": "USD", "name": "Colgate-Palmolive", "sector": "Consumer"},
+    {"symbol": "MO",    "country": "US", "currency": "USD", "name": "Altria Group", "sector": "Consumer"},
+    {"symbol": "PM",    "country": "US", "currency": "USD", "name": "Philip Morris International", "sector": "Consumer"},
+    {"symbol": "NKE",   "country": "US", "currency": "USD", "name": "Nike Inc.", "sector": "Consumer"},
+    {"symbol": "LULU",  "country": "US", "currency": "USD", "name": "Lululemon", "sector": "Consumer"},
+    {"symbol": "MCD",   "country": "US", "currency": "USD", "name": "McDonald's", "sector": "Consumer"},
+    {"symbol": "SBUX",  "country": "US", "currency": "USD", "name": "Starbucks", "sector": "Consumer"},
+    {"symbol": "YUM",   "country": "US", "currency": "USD", "name": "Yum! Brands", "sector": "Consumer"},
+    {"symbol": "CMG",   "country": "US", "currency": "USD", "name": "Chipotle Mexican Grill", "sector": "Consumer"},
+
+    # ============ US - Energy / Materials / Industrials ============
+    {"symbol": "XOM",   "country": "US", "currency": "USD", "name": "Exxon Mobil", "sector": "Energy"},
+    {"symbol": "CVX",   "country": "US", "currency": "USD", "name": "Chevron", "sector": "Energy"},
+    {"symbol": "COP",   "country": "US", "currency": "USD", "name": "ConocoPhillips", "sector": "Energy"},
+    {"symbol": "OXY",   "country": "US", "currency": "USD", "name": "Occidental Petroleum", "sector": "Energy"},
+    {"symbol": "SLB",   "country": "US", "currency": "USD", "name": "Schlumberger", "sector": "Energy"},
+    {"symbol": "EOG",   "country": "US", "currency": "USD", "name": "EOG Resources", "sector": "Energy"},
+    {"symbol": "PSX",   "country": "US", "currency": "USD", "name": "Phillips 66", "sector": "Energy"},
+    {"symbol": "MPC",   "country": "US", "currency": "USD", "name": "Marathon Petroleum", "sector": "Energy"},
+    {"symbol": "LIN",   "country": "US", "currency": "USD", "name": "Linde", "sector": "Chemical"},
+    {"symbol": "APD",   "country": "US", "currency": "USD", "name": "Air Products & Chemicals", "sector": "Chemical"},
+    {"symbol": "FCX",   "country": "US", "currency": "USD", "name": "Freeport-McMoRan", "sector": "Mining"},
+    {"symbol": "NUE",   "country": "US", "currency": "USD", "name": "Nucor", "sector": "Materials"},
+    {"symbol": "BA",    "country": "US", "currency": "USD", "name": "Boeing", "sector": "Aerospace"},
+    {"symbol": "LMT",   "country": "US", "currency": "USD", "name": "Lockheed Martin", "sector": "Aerospace"},
+    {"symbol": "RTX",   "country": "US", "currency": "USD", "name": "RTX Corporation", "sector": "Aerospace"},
+    {"symbol": "NOC",   "country": "US", "currency": "USD", "name": "Northrop Grumman", "sector": "Aerospace"},
+    {"symbol": "GD",    "country": "US", "currency": "USD", "name": "General Dynamics", "sector": "Aerospace"},
+    {"symbol": "CAT",   "country": "US", "currency": "USD", "name": "Caterpillar", "sector": "Industrial"},
+    {"symbol": "DE",    "country": "US", "currency": "USD", "name": "Deere & Company", "sector": "Industrial"},
+    {"symbol": "HON",   "country": "US", "currency": "USD", "name": "Honeywell", "sector": "Industrial"},
+    {"symbol": "GE",    "country": "US", "currency": "USD", "name": "General Electric", "sector": "Industrial"},
+    {"symbol": "MMM",   "country": "US", "currency": "USD", "name": "3M", "sector": "Industrial"},
+    {"symbol": "F",     "country": "US", "currency": "USD", "name": "Ford Motor", "sector": "Automotive"},
+    {"symbol": "GM",    "country": "US", "currency": "USD", "name": "General Motors", "sector": "Automotive"},
+    {"symbol": "RIVN",  "country": "US", "currency": "USD", "name": "Rivian Automotive", "sector": "Automotive"},
+    {"symbol": "LCID",  "country": "US", "currency": "USD", "name": "Lucid Group", "sector": "Automotive"},
+    {"symbol": "UPS",   "country": "US", "currency": "USD", "name": "United Parcel Service", "sector": "Logistics"},
+    {"symbol": "FDX",   "country": "US", "currency": "USD", "name": "FedEx", "sector": "Logistics"},
+    {"symbol": "UNP",   "country": "US", "currency": "USD", "name": "Union Pacific", "sector": "Logistics"},
+    {"symbol": "CSX",   "country": "US", "currency": "USD", "name": "CSX Corporation", "sector": "Logistics"},
+    {"symbol": "DAL",   "country": "US", "currency": "USD", "name": "Delta Air Lines", "sector": "Airlines"},
+    {"symbol": "UAL",   "country": "US", "currency": "USD", "name": "United Airlines", "sector": "Airlines"},
+    {"symbol": "AAL",   "country": "US", "currency": "USD", "name": "American Airlines", "sector": "Airlines"},
+    {"symbol": "LUV",   "country": "US", "currency": "USD", "name": "Southwest Airlines", "sector": "Airlines"},
+
+    # ============ US - Utilities / Telecom / REITs ============
+    {"symbol": "NEE",   "country": "US", "currency": "USD", "name": "NextEra Energy", "sector": "Utilities"},
+    {"symbol": "DUK",   "country": "US", "currency": "USD", "name": "Duke Energy", "sector": "Utilities"},
+    {"symbol": "SO",    "country": "US", "currency": "USD", "name": "Southern Company", "sector": "Utilities"},
+    {"symbol": "AEP",   "country": "US", "currency": "USD", "name": "American Electric Power", "sector": "Utilities"},
+    {"symbol": "T",     "country": "US", "currency": "USD", "name": "AT&T", "sector": "Telecom"},
+    {"symbol": "VZ",    "country": "US", "currency": "USD", "name": "Verizon Communications", "sector": "Telecom"},
+    {"symbol": "TMUS",  "country": "US", "currency": "USD", "name": "T-Mobile US", "sector": "Telecom"},
+    {"symbol": "CMCSA", "country": "US", "currency": "USD", "name": "Comcast", "sector": "Telecom"},
+    {"symbol": "PLD",   "country": "US", "currency": "USD", "name": "Prologis", "sector": "REIT"},
+    {"symbol": "AMT",   "country": "US", "currency": "USD", "name": "American Tower", "sector": "REIT"},
+    {"symbol": "EQIX",  "country": "US", "currency": "USD", "name": "Equinix", "sector": "REIT"},
+
+    # ============ United Kingdom (FTSE) ============
+    {"symbol": "HSBA.L",  "country": "UK", "currency": "GBP", "name": "HSBC Holdings", "sector": "Finance"},
+    {"symbol": "BARC.L",  "country": "UK", "currency": "GBP", "name": "Barclays", "sector": "Finance"},
+    {"symbol": "LLOY.L",  "country": "UK", "currency": "GBP", "name": "Lloyds Banking Group", "sector": "Finance"},
+    {"symbol": "NWG.L",   "country": "UK", "currency": "GBP", "name": "NatWest Group", "sector": "Finance"},
+    {"symbol": "SHEL.L",  "country": "UK", "currency": "GBP", "name": "Shell plc", "sector": "Energy"},
+    {"symbol": "BP.L",    "country": "UK", "currency": "GBP", "name": "BP plc", "sector": "Energy"},
+    {"symbol": "AZN.L",   "country": "UK", "currency": "GBP", "name": "AstraZeneca", "sector": "Healthcare"},
+    {"symbol": "GSK.L",   "country": "UK", "currency": "GBP", "name": "GSK plc", "sector": "Healthcare"},
+    {"symbol": "ULVR.L",  "country": "UK", "currency": "GBP", "name": "Unilever", "sector": "Consumer"},
+    {"symbol": "DGE.L",   "country": "UK", "currency": "GBP", "name": "Diageo", "sector": "Consumer"},
+    {"symbol": "BATS.L",  "country": "UK", "currency": "GBP", "name": "British American Tobacco", "sector": "Consumer"},
+    {"symbol": "RIO.L",   "country": "UK", "currency": "GBP", "name": "Rio Tinto", "sector": "Mining"},
+    {"symbol": "GLEN.L",  "country": "UK", "currency": "GBP", "name": "Glencore", "sector": "Mining"},
+    {"symbol": "VOD.L",   "country": "UK", "currency": "GBP", "name": "Vodafone Group", "sector": "Telecom"},
+    {"symbol": "TSCO.L",  "country": "UK", "currency": "GBP", "name": "Tesco", "sector": "Retail"},
+
+    # ============ Germany (DAX) ============
+    {"symbol": "SAP.DE",  "country": "Germany", "currency": "EUR", "name": "SAP SE", "sector": "Technology"},
+    {"symbol": "SIE.DE",  "country": "Germany", "currency": "EUR", "name": "Siemens AG", "sector": "Industrial"},
+    {"symbol": "ALV.DE",  "country": "Germany", "currency": "EUR", "name": "Allianz SE", "sector": "Finance"},
+    {"symbol": "DTE.DE",  "country": "Germany", "currency": "EUR", "name": "Deutsche Telekom", "sector": "Telecom"},
+    {"symbol": "BAS.DE",  "country": "Germany", "currency": "EUR", "name": "BASF SE", "sector": "Chemical"},
+    {"symbol": "BMW.DE",  "country": "Germany", "currency": "EUR", "name": "BMW AG", "sector": "Automotive"},
+    {"symbol": "MBG.DE",  "country": "Germany", "currency": "EUR", "name": "Mercedes-Benz Group", "sector": "Automotive"},
+    {"symbol": "VOW3.DE", "country": "Germany", "currency": "EUR", "name": "Volkswagen", "sector": "Automotive"},
+    {"symbol": "MUV2.DE", "country": "Germany", "currency": "EUR", "name": "Munich Re", "sector": "Finance"},
+    {"symbol": "DBK.DE",  "country": "Germany", "currency": "EUR", "name": "Deutsche Bank", "sector": "Finance"},
+    {"symbol": "ADS.DE",  "country": "Germany", "currency": "EUR", "name": "Adidas", "sector": "Consumer"},
+
+    # ============ France (CAC 40) ============
+    {"symbol": "MC.PA",   "country": "France", "currency": "EUR", "name": "LVMH", "sector": "Luxury"},
+    {"symbol": "OR.PA",   "country": "France", "currency": "EUR", "name": "L'Oréal", "sector": "Consumer"},
+    {"symbol": "TTE.PA",  "country": "France", "currency": "EUR", "name": "TotalEnergies", "sector": "Energy"},
+    {"symbol": "SAN.PA",  "country": "France", "currency": "EUR", "name": "Sanofi", "sector": "Healthcare"},
+    {"symbol": "BNP.PA",  "country": "France", "currency": "EUR", "name": "BNP Paribas", "sector": "Finance"},
+    {"symbol": "AIR.PA",  "country": "France", "currency": "EUR", "name": "Airbus SE", "sector": "Aerospace"},
+    {"symbol": "CAP.PA",  "country": "France", "currency": "EUR", "name": "Capgemini", "sector": "Technology"},
+    {"symbol": "RMS.PA",  "country": "France", "currency": "EUR", "name": "Hermès", "sector": "Luxury"},
+    {"symbol": "KER.PA",  "country": "France", "currency": "EUR", "name": "Kering", "sector": "Luxury"},
+
+    # ============ Netherlands / Switzerland / Spain / Italy ============
+    {"symbol": "ASML.AS", "country": "Netherlands", "currency": "EUR", "name": "ASML Holding", "sector": "Technology"},
+    {"symbol": "PRX.AS",  "country": "Netherlands", "currency": "EUR", "name": "Prosus", "sector": "Technology"},
+    {"symbol": "ADYEN.AS","country": "Netherlands", "currency": "EUR", "name": "Adyen", "sector": "Finance"},
+    {"symbol": "NESN.SW", "country": "Switzerland", "currency": "CHF", "name": "Nestlé", "sector": "Consumer"},
+    {"symbol": "ROG.SW",  "country": "Switzerland", "currency": "CHF", "name": "Roche Holding", "sector": "Healthcare"},
+    {"symbol": "NOVN.SW", "country": "Switzerland", "currency": "CHF", "name": "Novartis", "sector": "Healthcare"},
+    {"symbol": "UBSG.SW", "country": "Switzerland", "currency": "CHF", "name": "UBS Group", "sector": "Finance"},
+    {"symbol": "ZURN.SW", "country": "Switzerland", "currency": "CHF", "name": "Zurich Insurance", "sector": "Finance"},
+    {"symbol": "ABBN.SW", "country": "Switzerland", "currency": "CHF", "name": "ABB", "sector": "Industrial"},
+    {"symbol": "SAN.MC",  "country": "Spain",       "currency": "EUR", "name": "Banco Santander", "sector": "Finance"},
+    {"symbol": "IBE.MC",  "country": "Spain",       "currency": "EUR", "name": "Iberdrola", "sector": "Utilities"},
+    {"symbol": "ITX.MC",  "country": "Spain",       "currency": "EUR", "name": "Inditex (Zara)", "sector": "Retail"},
+    {"symbol": "ENI.MI",  "country": "Italy",       "currency": "EUR", "name": "Eni SpA", "sector": "Energy"},
+    {"symbol": "ISP.MI",  "country": "Italy",       "currency": "EUR", "name": "Intesa Sanpaolo", "sector": "Finance"},
+
+    # ============ Japan ============
+    {"symbol": "7203.T",  "country": "Japan", "currency": "JPY", "name": "Toyota Motor", "sector": "Automotive"},
+    {"symbol": "6758.T",  "country": "Japan", "currency": "JPY", "name": "Sony Group", "sector": "Entertainment"},
+    {"symbol": "9984.T",  "country": "Japan", "currency": "JPY", "name": "SoftBank Group", "sector": "Technology"},
+    {"symbol": "6861.T",  "country": "Japan", "currency": "JPY", "name": "Keyence", "sector": "Industrial"},
+    {"symbol": "8035.T",  "country": "Japan", "currency": "JPY", "name": "Tokyo Electron", "sector": "Technology"},
+    {"symbol": "9433.T",  "country": "Japan", "currency": "JPY", "name": "KDDI", "sector": "Telecom"},
+    {"symbol": "9432.T",  "country": "Japan", "currency": "JPY", "name": "Nippon Telegraph & Telephone", "sector": "Telecom"},
+    {"symbol": "8306.T",  "country": "Japan", "currency": "JPY", "name": "Mitsubishi UFJ Financial", "sector": "Finance"},
+    {"symbol": "7974.T",  "country": "Japan", "currency": "JPY", "name": "Nintendo", "sector": "Gaming"},
+    {"symbol": "6501.T",  "country": "Japan", "currency": "JPY", "name": "Hitachi", "sector": "Industrial"},
+    {"symbol": "7267.T",  "country": "Japan", "currency": "JPY", "name": "Honda Motor", "sector": "Automotive"},
+
+    # ============ China / Hong Kong ============
+    {"symbol": "BABA",    "country": "China",     "currency": "USD", "name": "Alibaba Group (ADR)", "sector": "E-commerce"},
+    {"symbol": "PDD",     "country": "China",     "currency": "USD", "name": "PDD Holdings (ADR)", "sector": "E-commerce"},
+    {"symbol": "JD",      "country": "China",     "currency": "USD", "name": "JD.com (ADR)", "sector": "E-commerce"},
+    {"symbol": "BIDU",    "country": "China",     "currency": "USD", "name": "Baidu (ADR)", "sector": "Technology"},
+    {"symbol": "NIO",     "country": "China",     "currency": "USD", "name": "NIO Inc. (ADR)", "sector": "Automotive"},
+    {"symbol": "XPEV",    "country": "China",     "currency": "USD", "name": "XPeng (ADR)", "sector": "Automotive"},
+    {"symbol": "LI",      "country": "China",     "currency": "USD", "name": "Li Auto (ADR)", "sector": "Automotive"},
+    {"symbol": "BILI",    "country": "China",     "currency": "USD", "name": "Bilibili (ADR)", "sector": "Entertainment"},
+    {"symbol": "0700.HK", "country": "Hong Kong", "currency": "HKD", "name": "Tencent Holdings", "sector": "Technology"},
+    {"symbol": "9988.HK", "country": "Hong Kong", "currency": "HKD", "name": "Alibaba Group", "sector": "E-commerce"},
+    {"symbol": "3690.HK", "country": "Hong Kong", "currency": "HKD", "name": "Meituan", "sector": "E-commerce"},
+    {"symbol": "1398.HK", "country": "Hong Kong", "currency": "HKD", "name": "ICBC", "sector": "Finance"},
+    {"symbol": "0939.HK", "country": "Hong Kong", "currency": "HKD", "name": "China Construction Bank", "sector": "Finance"},
+    {"symbol": "0005.HK", "country": "Hong Kong", "currency": "HKD", "name": "HSBC Holdings (HK)", "sector": "Finance"},
+
+    # ============ India (NSE/BSE) ============
+    {"symbol": "RELIANCE.NS",  "country": "India", "currency": "INR", "name": "Reliance Industries", "sector": "Conglomerate"},
+    {"symbol": "TCS.NS",       "country": "India", "currency": "INR", "name": "Tata Consultancy Services", "sector": "Technology"},
+    {"symbol": "INFY.NS",      "country": "India", "currency": "INR", "name": "Infosys", "sector": "Technology"},
+    {"symbol": "WIPRO.NS",     "country": "India", "currency": "INR", "name": "Wipro", "sector": "Technology"},
+    {"symbol": "HDFCBANK.NS",  "country": "India", "currency": "INR", "name": "HDFC Bank", "sector": "Finance"},
+    {"symbol": "ICICIBANK.NS", "country": "India", "currency": "INR", "name": "ICICI Bank", "sector": "Finance"},
+    {"symbol": "SBIN.NS",      "country": "India", "currency": "INR", "name": "State Bank of India", "sector": "Finance"},
+    {"symbol": "AXISBANK.NS",  "country": "India", "currency": "INR", "name": "Axis Bank", "sector": "Finance"},
+    {"symbol": "BHARTIARTL.NS","country": "India", "currency": "INR", "name": "Bharti Airtel", "sector": "Telecom"},
+    {"symbol": "HINDUNILVR.NS","country": "India", "currency": "INR", "name": "Hindustan Unilever", "sector": "Consumer"},
+    {"symbol": "ITC.NS",       "country": "India", "currency": "INR", "name": "ITC Limited", "sector": "Consumer"},
+    {"symbol": "LT.NS",        "country": "India", "currency": "INR", "name": "Larsen & Toubro", "sector": "Industrial"},
+    {"symbol": "MARUTI.NS",    "country": "India", "currency": "INR", "name": "Maruti Suzuki", "sector": "Automotive"},
+    {"symbol": "BAJFINANCE.NS","country": "India", "currency": "INR", "name": "Bajaj Finance", "sector": "Finance"},
+
+    # ============ Canada (TSX) ============
+    {"symbol": "RY.TO",   "country": "Canada", "currency": "CAD", "name": "Royal Bank of Canada", "sector": "Finance"},
+    {"symbol": "TD.TO",   "country": "Canada", "currency": "CAD", "name": "Toronto-Dominion Bank", "sector": "Finance"},
+    {"symbol": "BMO.TO",  "country": "Canada", "currency": "CAD", "name": "Bank of Montreal", "sector": "Finance"},
+    {"symbol": "BNS.TO",  "country": "Canada", "currency": "CAD", "name": "Bank of Nova Scotia", "sector": "Finance"},
+    {"symbol": "CNQ.TO",  "country": "Canada", "currency": "CAD", "name": "Canadian Natural Resources", "sector": "Energy"},
+    {"symbol": "ENB.TO",  "country": "Canada", "currency": "CAD", "name": "Enbridge", "sector": "Energy"},
+    {"symbol": "SU.TO",   "country": "Canada", "currency": "CAD", "name": "Suncor Energy", "sector": "Energy"},
+    {"symbol": "CNR.TO",  "country": "Canada", "currency": "CAD", "name": "Canadian National Railway", "sector": "Logistics"},
+    {"symbol": "SHOP.TO", "country": "Canada", "currency": "CAD", "name": "Shopify", "sector": "Technology"},
+    {"symbol": "BCE.TO",  "country": "Canada", "currency": "CAD", "name": "BCE Inc.", "sector": "Telecom"},
+
+    # ============ Australia ============
+    {"symbol": "BHP.AX",  "country": "Australia", "currency": "AUD", "name": "BHP Group", "sector": "Mining"},
+    {"symbol": "CBA.AX",  "country": "Australia", "currency": "AUD", "name": "Commonwealth Bank", "sector": "Finance"},
+    {"symbol": "WBC.AX",  "country": "Australia", "currency": "AUD", "name": "Westpac Banking", "sector": "Finance"},
+    {"symbol": "NAB.AX",  "country": "Australia", "currency": "AUD", "name": "National Australia Bank", "sector": "Finance"},
+    {"symbol": "ANZ.AX",  "country": "Australia", "currency": "AUD", "name": "ANZ Group", "sector": "Finance"},
+    {"symbol": "CSL.AX",  "country": "Australia", "currency": "AUD", "name": "CSL Limited", "sector": "Healthcare"},
+    {"symbol": "WES.AX",  "country": "Australia", "currency": "AUD", "name": "Wesfarmers", "sector": "Retail"},
+    {"symbol": "WOW.AX",  "country": "Australia", "currency": "AUD", "name": "Woolworths Group", "sector": "Retail"},
+    {"symbol": "FMG.AX",  "country": "Australia", "currency": "AUD", "name": "Fortescue Metals", "sector": "Mining"},
+
+    # ============ South Korea / Singapore / Taiwan / Brazil ============
+    {"symbol": "005930.KS","country": "South Korea", "currency": "KRW", "name": "Samsung Electronics", "sector": "Technology"},
+    {"symbol": "000660.KS","country": "South Korea", "currency": "KRW", "name": "SK Hynix", "sector": "Technology"},
+    {"symbol": "035420.KS","country": "South Korea", "currency": "KRW", "name": "NAVER", "sector": "Technology"},
+    {"symbol": "D05.SI",   "country": "Singapore",   "currency": "SGD", "name": "DBS Group", "sector": "Finance"},
+    {"symbol": "O39.SI",   "country": "Singapore",   "currency": "SGD", "name": "OCBC Bank", "sector": "Finance"},
+    {"symbol": "U11.SI",   "country": "Singapore",   "currency": "SGD", "name": "UOB", "sector": "Finance"},
+    {"symbol": "S68.SI",   "country": "Singapore",   "currency": "SGD", "name": "Singapore Exchange", "sector": "Finance"},
+    {"symbol": "TSM",      "country": "Taiwan",      "currency": "USD", "name": "Taiwan Semiconductor (ADR)", "sector": "Technology"},
+    {"symbol": "VALE",     "country": "Brazil",      "currency": "USD", "name": "Vale S.A. (ADR)", "sector": "Mining"},
+    {"symbol": "ITUB",     "country": "Brazil",      "currency": "USD", "name": "Itaú Unibanco (ADR)", "sector": "Finance"},
+    {"symbol": "PBR",      "country": "Brazil",      "currency": "USD", "name": "Petrobras (ADR)", "sector": "Energy"},
+]
+
+# Quick-lookup index by uppercase symbol
+SYMBOL_LOOKUP: Dict[str, Dict[str, str]] = {s["symbol"].upper(): s for s in STOCK_DEFINITIONS}
+
 def generate_chart(prices: List[float], change_percent: float, direction: str) -> str:
     """Generate SVG chart based on actual price data"""
     try:
@@ -351,133 +674,8 @@ def get_live_data():
     print(f"\n📊 FETCHING REAL-TIME GLOBAL STOCKS - {datetime.now().strftime('%H:%M:%S')}")
     print(f"🔑 Using Alpha Vantage API key: {ALPHA_VANTAGE_API_KEY[:4]}...{ALPHA_VANTAGE_API_KEY[-4:]}")
     print("="*60)
-    
-    # Stock definitions - 100+ global stocks
-    stocks = [
-        # ========== UNITED STATES (30 stocks) ==========
-        {"symbol": "AAPL", "country": "US", "currency": "USD", "name": "Apple Inc.", "sector": "Technology"},
-        {"symbol": "MSFT", "country": "US", "currency": "USD", "name": "Microsoft Corporation", "sector": "Technology"},
-        {"symbol": "GOOGL", "country": "US", "currency": "USD", "name": "Alphabet Inc.", "sector": "Technology"},
-        {"symbol": "AMZN", "country": "US", "currency": "USD", "name": "Amazon.com Inc.", "sector": "E-commerce"},
-        {"symbol": "TSLA", "country": "US", "currency": "USD", "name": "Tesla Inc.", "sector": "Automotive"},
-        {"symbol": "META", "country": "US", "currency": "USD", "name": "Meta Platforms Inc.", "sector": "Technology"},
-        {"symbol": "NVDA", "country": "US", "currency": "USD", "name": "NVIDIA Corporation", "sector": "Technology"},
-        {"symbol": "JPM", "country": "US", "currency": "USD", "name": "JPMorgan Chase & Co.", "sector": "Finance"},
-        {"symbol": "V", "country": "US", "currency": "USD", "name": "Visa Inc.", "sector": "Finance"},
-        {"symbol": "JNJ", "country": "US", "currency": "USD", "name": "Johnson & Johnson", "sector": "Healthcare"},
-        {"symbol": "WMT", "country": "US", "currency": "USD", "name": "Walmart Inc.", "sector": "Retail"},
-        {"symbol": "PG", "country": "US", "currency": "USD", "name": "Procter & Gamble", "sector": "Consumer"},
-        {"symbol": "MA", "country": "US", "currency": "USD", "name": "Mastercard Inc.", "sector": "Finance"},
-        {"symbol": "DIS", "country": "US", "currency": "USD", "name": "Walt Disney Company", "sector": "Entertainment"},
-        {"symbol": "NFLX", "country": "US", "currency": "USD", "name": "Netflix Inc.", "sector": "Entertainment"},
-        {"symbol": "ADBE", "country": "US", "currency": "USD", "name": "Adobe Inc.", "sector": "Technology"},
-        {"symbol": "PYPL", "country": "US", "currency": "USD", "name": "PayPal Holdings", "sector": "Finance"},
-        {"symbol": "INTC", "country": "US", "currency": "USD", "name": "Intel Corporation", "sector": "Technology"},
-        {"symbol": "CSCO", "country": "US", "currency": "USD", "name": "Cisco Systems", "sector": "Technology"},
-        {"symbol": "PEP", "country": "US", "currency": "USD", "name": "PepsiCo Inc.", "sector": "Consumer"},
-        {"symbol": "COST", "country": "US", "currency": "USD", "name": "Costco Wholesale", "sector": "Retail"},
-        {"symbol": "MRK", "country": "US", "currency": "USD", "name": "Merck & Co.", "sector": "Healthcare"},
-        {"symbol": "ABT", "country": "US", "currency": "USD", "name": "Abbott Laboratories", "sector": "Healthcare"},
-        {"symbol": "TMO", "country": "US", "currency": "USD", "name": "Thermo Fisher Scientific", "sector": "Healthcare"},
-        {"symbol": "AVGO", "country": "US", "currency": "USD", "name": "Broadcom Inc.", "sector": "Technology"},
-        {"symbol": "ACN", "country": "US", "currency": "USD", "name": "Accenture", "sector": "Technology"},
-        {"symbol": "CRM", "country": "US", "currency": "USD", "name": "Salesforce", "sector": "Technology"},
-        {"symbol": "NKE", "country": "US", "currency": "USD", "name": "Nike Inc.", "sector": "Consumer"},
-        {"symbol": "AMD", "country": "US", "currency": "USD", "name": "Advanced Micro Devices", "sector": "Technology"},
-        {"symbol": "QCOM", "country": "US", "currency": "USD", "name": "Qualcomm", "sector": "Technology"},
-        
-        # ========== OTHER COUNTRIES ==========
-        # UK
-        {"symbol": "HSBC", "country": "UK", "currency": "GBP", "name": "HSBC Holdings", "sector": "Finance"},
-        {"symbol": "BP", "country": "UK", "currency": "GBP", "name": "BP PLC", "sector": "Energy"},
-        {"symbol": "GSK", "country": "UK", "currency": "GBP", "name": "GSK plc", "sector": "Healthcare"},
-        {"symbol": "UL", "country": "UK", "currency": "GBP", "name": "Unilever PLC", "sector": "Consumer"},
-        {"symbol": "AZN", "country": "UK", "currency": "GBP", "name": "AstraZeneca PLC", "sector": "Healthcare"},
-        {"symbol": "RIO", "country": "UK", "currency": "GBP", "name": "Rio Tinto", "sector": "Mining"},
-        {"symbol": "BATS", "country": "UK", "currency": "GBP", "name": "British American Tobacco", "sector": "Consumer"},
-        {"symbol": "RDSA", "country": "UK", "currency": "GBP", "name": "Royal Dutch Shell", "sector": "Energy"},
-        
-        # Canada
-        {"symbol": "RY", "country": "Canada", "currency": "CAD", "name": "Royal Bank of Canada", "sector": "Finance"},
-        {"symbol": "TD", "country": "Canada", "currency": "CAD", "name": "Toronto-Dominion Bank", "sector": "Finance"},
-        {"symbol": "SHOP", "country": "Canada", "currency": "CAD", "name": "Shopify Inc.", "sector": "Technology"},
-        {"symbol": "BMO", "country": "Canada", "currency": "CAD", "name": "Bank of Montreal", "sector": "Finance"},
-        {"symbol": "CNQ", "country": "Canada", "currency": "CAD", "name": "Canadian Natural Resources", "sector": "Energy"},
-        {"symbol": "ENB", "country": "Canada", "currency": "CAD", "name": "Enbridge Inc.", "sector": "Energy"},
-        {"symbol": "BCE", "country": "Canada", "currency": "CAD", "name": "BCE Inc.", "sector": "Telecom"},
-        
-        # Germany
-        {"symbol": "SAP", "country": "Germany", "currency": "EUR", "name": "SAP SE", "sector": "Technology"},
-        {"symbol": "SIE", "country": "Germany", "currency": "EUR", "name": "Siemens AG", "sector": "Industrial"},
-        {"symbol": "DAI", "country": "Germany", "currency": "EUR", "name": "Mercedes-Benz Group", "sector": "Automotive"},
-        {"symbol": "BMW", "country": "Germany", "currency": "EUR", "name": "BMW AG", "sector": "Automotive"},
-        {"symbol": "BAS", "country": "Germany", "currency": "EUR", "name": "BASF SE", "sector": "Chemical"},
-        {"symbol": "ALV", "country": "Germany", "currency": "EUR", "name": "Allianz SE", "sector": "Finance"},
-        {"symbol": "DTE", "country": "Germany", "currency": "EUR", "name": "Deutsche Telekom", "sector": "Telecom"},
-        
-        # France
-        {"symbol": "TTE", "country": "France", "currency": "EUR", "name": "TotalEnergies SE", "sector": "Energy"},
-        {"symbol": "SAN", "country": "France", "currency": "EUR", "name": "Sanofi", "sector": "Healthcare"},
-        {"symbol": "AIR", "country": "France", "currency": "EUR", "name": "Airbus SE", "sector": "Aerospace"},
-        {"symbol": "BNP", "country": "France", "currency": "EUR", "name": "BNP Paribas", "sector": "Finance"},
-        {"symbol": "MC", "country": "France", "currency": "EUR", "name": "LVMH Moët Hennessy", "sector": "Luxury"},
-        {"symbol": "OR", "country": "France", "currency": "EUR", "name": "L'Oréal", "sector": "Consumer"},
-        {"symbol": "CAP", "country": "France", "currency": "EUR", "name": "Capgemini", "sector": "Technology"},
-        
-        # Japan
-        {"symbol": "TOYOF", "country": "Japan", "currency": "JPY", "name": "Toyota Motor", "sector": "Automotive"},
-        {"symbol": "SONY", "country": "Japan", "currency": "JPY", "name": "Sony Group", "sector": "Entertainment"},
-        {"symbol": "NTDOY", "country": "Japan", "currency": "JPY", "name": "Nintendo", "sector": "Gaming"},
-        {"symbol": "HMC", "country": "Japan", "currency": "JPY", "name": "Honda Motor", "sector": "Automotive"},
-        {"symbol": "MUFG", "country": "Japan", "currency": "JPY", "name": "Mitsubishi UFJ Financial", "sector": "Finance"},
-        {"symbol": "NTT", "country": "Japan", "currency": "JPY", "name": "Nippon Telegraph & Telephone", "sector": "Telecom"},
-        {"symbol": "HITACHI", "country": "Japan", "currency": "JPY", "name": "Hitachi Ltd", "sector": "Industrial"},
-        
-        # China
-        {"symbol": "BABA", "country": "China", "currency": "CNY", "name": "Alibaba Group", "sector": "E-commerce"},
-        {"symbol": "PDD", "country": "China", "currency": "CNY", "name": "Pinduoduo Inc.", "sector": "E-commerce"},
-        {"symbol": "TCEHY", "country": "China", "currency": "CNY", "name": "Tencent Holdings", "sector": "Technology"},
-        {"symbol": "JD", "country": "China", "currency": "CNY", "name": "JD.com Inc.", "sector": "E-commerce"},
-        {"symbol": "NIO", "country": "China", "currency": "CNY", "name": "NIO Inc.", "sector": "Automotive"},
-        {"symbol": "BIDU", "country": "China", "currency": "CNY", "name": "Baidu Inc.", "sector": "Technology"},
-        {"symbol": "XPEV", "country": "China", "currency": "CNY", "name": "XPeng Inc.", "sector": "Automotive"},
-        
-        # India
-        {"symbol": "INFY", "country": "India", "currency": "INR", "name": "Infosys Ltd", "sector": "Technology"},
-        {"symbol": "RELIANCE", "country": "India", "currency": "INR", "name": "Reliance Industries", "sector": "Conglomerate"},
-        {"symbol": "TCS", "country": "India", "currency": "INR", "name": "Tata Consultancy Services", "sector": "Technology"},
-        {"symbol": "HDB", "country": "India", "currency": "INR", "name": "HDFC Bank", "sector": "Finance"},
-        {"symbol": "WIPRO", "country": "India", "currency": "INR", "name": "Wipro Ltd", "sector": "Technology"},
-        {"symbol": "SBIN", "country": "India", "currency": "INR", "name": "State Bank of India", "sector": "Finance"},
-        {"symbol": "ICICIBANK", "country": "India", "currency": "INR", "name": "ICICI Bank", "sector": "Finance"},
-        
-        # Australia
-        {"symbol": "BHP", "country": "Australia", "currency": "AUD", "name": "BHP Group Ltd", "sector": "Mining"},
-        {"symbol": "CBA", "country": "Australia", "currency": "AUD", "name": "Commonwealth Bank", "sector": "Finance"},
-        {"symbol": "RIO.AX", "country": "Australia", "currency": "AUD", "name": "Rio Tinto Ltd", "sector": "Mining"},
-        {"symbol": "CSL", "country": "Australia", "currency": "AUD", "name": "CSL Limited", "sector": "Healthcare"},
-        {"symbol": "WOW", "country": "Australia", "currency": "AUD", "name": "Woolworths Group", "sector": "Retail"},
-        
-        # Switzerland
-        {"symbol": "NVS", "country": "Switzerland", "currency": "CHF", "name": "Novartis AG", "sector": "Healthcare"},
-        {"symbol": "UBS", "country": "Switzerland", "currency": "CHF", "name": "UBS Group AG", "sector": "Finance"},
-        {"symbol": "ROG", "country": "Switzerland", "currency": "CHF", "name": "Roche Holding AG", "sector": "Healthcare"},
-        {"symbol": "NESTLE", "country": "Switzerland", "currency": "CHF", "name": "Nestlé SA", "sector": "Consumer"},
-        {"symbol": "ABB", "country": "Switzerland", "currency": "CHF", "name": "ABB Ltd", "sector": "Industrial"},
-        
-        # Netherlands
-        {"symbol": "ASML", "country": "Netherlands", "currency": "EUR", "name": "ASML Holding", "sector": "Technology"},
-        {"symbol": "PHG", "country": "Netherlands", "currency": "EUR", "name": "Philips", "sector": "Healthcare"},
-        {"symbol": "AD", "country": "Netherlands", "currency": "EUR", "name": "Adyen NV", "sector": "Finance"},
-        
-        # Singapore
-        {"symbol": "DBS", "country": "Singapore", "currency": "SGD", "name": "DBS Group", "sector": "Finance"},
-        {"symbol": "SGX", "country": "Singapore", "currency": "SGD", "name": "Singapore Exchange", "sector": "Finance"},
-        {"symbol": "SIA", "country": "Singapore", "currency": "SGD", "name": "Singapore Airlines", "sector": "Airlines"}
-    ]
-    
-    # Using all stocks - fallback data mode for instant response
-    
+
+    stocks = STOCK_DEFINITIONS
     stocks_data = []
     total_volume = 0
     positive_stocks = 0

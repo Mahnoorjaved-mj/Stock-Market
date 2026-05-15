@@ -97,7 +97,7 @@ class StockLSTM(nn.Module):
 
 class RealLSTMPredictor:
     def __init__(self):
-        self.model_dir = "ai_models"
+        self.model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ai_models"))
         os.makedirs(self.model_dir, exist_ok=True)
         
         # Use GPU if available

@@ -1,0 +1,8 @@
+{% extends "_base.html" %}
+{% block subject %}Verify your StockSense account{% endblock %}
+{% block body %}
+<h2 style="margin:0 0 14px;color:#fff;font-size:22px;">Verify your email</h2>
+<p>Use the code below to finish creating your StockSense account. The code expires in 10 minutes.</p>
+<div style="margin:24px 0;padding:18px;background:#0b0f19;border-radius:10px;text-align:center;font-size:32px;font-weight:800;letter-spacing:6px;color:#60a5fa;">{{ otp }}</div>
+<p style="color:#94a3b8;font-size:13px;">If you didn't request this, you can ignore this email.</p>
+{% endblock %}
