@@ -2,34 +2,78 @@
 {% block title %}Create account · StockSense{% endblock %}
 {% block page_title %}Create your account{% endblock %}
 {% block content %}
-<div style="max-width:460px;margin:0 auto;">
+<script>document.body.classList.add('auth-shell');</script>
+<div style="width:100%;max-width:440px;">
+  <div class="auth-brand">
+    <span class="logo-mark" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M2 12L5.5 8L8.5 10.5L14 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 4H14V8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+    <span>StockSense</span>
+  </div>
   <section class="ss-card" id="step1">
     <h3 class="ss-card-title"><i class="fas fa-user-plus"></i> Sign up</h3>
     <form id="regForm" class="ss-form">
       <label>Name <input type="text" id="name" placeholder="Your name (optional)"></label>
       <label>Email <input type="email" id="email" required autocomplete="email"></label>
       <label>Password
-        <input type="password" id="password" required minlength="8" autocomplete="new-password">
-        <small>At least 8 characters with a letter and a digit.</small>
+        <div class="ss-pw-wrap">
+          <input type="password" id="password" required minlength="10" autocomplete="new-password">
+          <button type="button" class="ss-pw-toggle" data-target="password" aria-label="Show password"><i class="fas fa-eye"></i></button>
+        </div>
+        <div class="ss-pw-meter"><div id="pwBar" class="ss-pw-meter-bar"></div></div>
+        <div class="ss-pw-meter-label" id="pwLabel">At least 10 chars · letter · digit · symbol</div>
       </label>
-      <button type="submit" class="ss-btn ss-btn-primary">Send verification code</button>
+      <button type="submit" class="ss-btn ss-btn-primary ss-btn-block">Send verification code</button>
       <p id="msg1" class="ss-msg"></p>
     </form>
-    <p style="margin-top:14px;font-size:13.5px;color:#94a3b8;">Already have an account? <a href="/login" style="color:#60a5fa;">Log in</a></p>
+    <p style="margin-top:14px;font-size:13px;color:var(--text-secondary);">Already have an account? <a href="/login" style="color:var(--accent);">Log in</a></p>
   </section>
 
   <section class="ss-card" id="step2" style="display:none;">
     <h3 class="ss-card-title"><i class="fas fa-envelope-open-text"></i> Verify your email</h3>
-    <p style="color:#94a3b8;font-size:13.5px;">We sent a 6-digit code to <b id="emailEcho"></b>. Enter it below.</p>
+    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:10px;">We sent a 6-digit code to <b id="emailEcho"></b>. Enter it below.</p>
     <form id="otpForm" class="ss-form">
-      <label>Verification code <input type="text" id="otp" maxlength="6" pattern="\d{6}" required></label>
-      <button type="submit" class="ss-btn ss-btn-primary">Verify & finish</button>
+      <label>Verification code <input type="text" id="otp" maxlength="6" pattern="\d{6}" required inputmode="numeric"></label>
+      <button type="submit" class="ss-btn ss-btn-primary ss-btn-block">Verify & finish</button>
       <p id="msg2" class="ss-msg"></p>
     </form>
   </section>
 </div>
 <script>
 let pendingEmail = '';
+
+// Show/hide
+document.querySelectorAll('.ss-pw-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const t = document.getElementById(btn.dataset.target); if (!t) return;
+    const showing = t.type === 'text';
+    t.type = showing ? 'password' : 'text';
+    btn.querySelector('i').className = showing ? 'fas fa-eye' : 'fas fa-eye-slash';
+  });
+});
+
+// Password strength
+function scorePassword(p) {
+  let score = 0;
+  if (!p) return 0;
+  if (p.length >= 10) score++;
+  if (p.length >= 14) score++;
+  if (/[A-Z]/.test(p) && /[a-z]/.test(p)) score++;
+  if (/\d/.test(p)) score++;
+  if (/[^A-Za-z0-9]/.test(p)) score++;
+  return Math.min(score, 4);
+}
+const LABELS = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
+document.getElementById('password').addEventListener('input', (e) => {
+  const s = scorePassword(e.target.value);
+  const bar = document.getElementById('pwBar');
+  bar.className = 'ss-pw-meter-bar' + (s ? ' s' + s : '');
+  document.getElementById('pwLabel').textContent = LABELS[s];
+});
+
 document.getElementById('regForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   pendingEmail = document.getElementById('email').value.trim();
@@ -46,7 +90,7 @@ document.getElementById('regForm').addEventListener('submit', async (e) => {
     document.getElementById('step2').style.display = '';
     document.getElementById('emailEcho').textContent = pendingEmail;
   } else {
-    m.textContent = data.message || 'Error'; m.style.color = '#dc2626';
+    m.textContent = data.message || 'Error'; m.className = 'ss-msg error';
   }
 });
 document.getElementById('otpForm').addEventListener('submit', async (e) => {
@@ -56,10 +100,10 @@ document.getElementById('otpForm').addEventListener('submit', async (e) => {
   const data = await r.json();
   const m = document.getElementById('msg2');
   if (data.status === 'success') {
-    m.textContent = 'Verified — welcome!'; m.style.color = '#16a34a';
+    m.textContent = 'Verified — welcome!'; m.className = 'ss-msg success';
     setTimeout(() => location.href = '/watchlist', 700);
   } else {
-    m.textContent = data.message || 'Invalid code'; m.style.color = '#dc2626';
+    m.textContent = data.message || 'Invalid code'; m.className = 'ss-msg error';
   }
 });
 </script>

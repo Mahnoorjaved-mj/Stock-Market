@@ -2,26 +2,141 @@
 {% block title %}Watchlist · StockSense{% endblock %}
 {% block page_title %}My Watchlist{% endblock %}
 {% block content %}
+<style>
+  .wl-add-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .wl-add-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .wl-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+  .wl-field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .wl-field-label .opt {
+    font-weight: 400;
+    color: var(--text-tertiary);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .wl-field-wrap { position: relative; }
+  .wl-field-wrap .wl-prefix {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-tertiary);
+    font-size: 13px;
+    pointer-events: none;
+  }
+  .wl-field-wrap input {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 11px;
+    color: var(--text-primary);
+    font-size: 13.5px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+  .wl-field-wrap input.has-prefix { padding-left: 24px; }
+  .wl-field-wrap input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .wl-field-wrap input::placeholder { color: var(--text-tertiary); }
+
+  .wl-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .wl-hint {
+    font-size: 12.5px;
+    color: var(--text-tertiary);
+    margin: 0;
+  }
+  .wl-hint a { color: var(--accent); text-decoration: none; }
+  .wl-hint a:hover { text-decoration: underline; }
+
+  @media (max-width: 700px) {
+    .wl-add-row { grid-template-columns: 1fr; }
+  }
+</style>
+
 <section class="ss-card">
   <h3 class="ss-card-title"><i class="fas fa-plus"></i> Add a company</h3>
-  <form id="addForm" class="ss-form ss-form-inline">
-    <div style="position:relative;flex:2;min-width:240px;">
-      <input type="text" id="symbolInput" placeholder="Search symbol or name (e.g. AAPL, Tesla)" autocomplete="off" required>
-      <div id="symbolSuggest" class="ss-suggest"></div>
+  <form id="addForm" class="wl-add-form">
+    <div class="wl-field">
+      <label for="symbolInput" class="wl-field-label">Symbol or name</label>
+      <div class="wl-field-wrap">
+        <input type="text" id="symbolInput" placeholder="e.g. AAPL, Tesla" autocomplete="off" required>
+        <div id="symbolSuggest" class="ss-suggest"></div>
+      </div>
     </div>
-    <input type="number" id="threshold" placeholder="Threshold % (optional)" min="0.1" max="100" step="0.1" style="flex:1;min-width:160px;">
-    <input type="number" id="targetHigh" placeholder="Alert above $ (optional)" step="0.01" min="0" style="flex:1;min-width:160px;">
-    <input type="number" id="targetLow" placeholder="Alert below $ (optional)" step="0.01" min="0" style="flex:1;min-width:160px;">
-    <button type="submit" class="ss-btn ss-btn-primary">Add</button>
+
+    <div class="wl-add-row">
+      <div class="wl-field">
+        <label for="threshold" class="wl-field-label">
+          Threshold <span class="opt">optional</span>
+        </label>
+        <div class="wl-field-wrap">
+          <input type="number" id="threshold" placeholder="5.0" min="0.1" max="100" step="0.1" class="has-prefix">
+          <span class="wl-prefix">%</span>
+        </div>
+      </div>
+      <div class="wl-field">
+        <label for="targetHigh" class="wl-field-label">
+          Alert above <span class="opt">optional</span>
+        </label>
+        <div class="wl-field-wrap">
+          <input type="number" id="targetHigh" placeholder="0.00" step="0.01" min="0" class="has-prefix">
+          <span class="wl-prefix">$</span>
+        </div>
+      </div>
+      <div class="wl-field">
+        <label for="targetLow" class="wl-field-label">
+          Alert below <span class="opt">optional</span>
+        </label>
+        <div class="wl-field-wrap">
+          <input type="number" id="targetLow" placeholder="0.00" step="0.01" min="0" class="has-prefix">
+          <span class="wl-prefix">$</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="wl-form-actions">
+      <p class="wl-hint">Leave threshold blank to use your default from <a href="/profile">Profile</a>.</p>
+      <button type="submit" class="ss-btn ss-btn-primary"><i class="fas fa-plus"></i> Add to watchlist</button>
+    </div>
+    <p id="addMsg" class="ss-msg"></p>
   </form>
-  <p id="addMsg" class="ss-msg"></p>
-  <p style="color:#94a3b8;font-size:13px;">Leave threshold blank to use your default from <a href="/profile" style="color:#60a5fa;">Profile</a>.</p>
 </section>
 
 <section class="ss-card" style="margin-top:20px;">
   <h3 class="ss-card-title"><i class="fas fa-bookmark"></i> Tracked companies</h3>
   <div style="overflow-x:auto;">
-    <table class="ss-table" id="wlTable">
+    <table class="ss-table responsive" id="wlTable">
       <thead>
         <tr>
           <th>Symbol</th><th>Name</th><th>Price</th><th>Change</th>
@@ -79,7 +194,13 @@ function fmtNum(n, prec = 2) {
 function renderRows(items) {
   const body = document.getElementById('wlBody');
   if (!items.length) {
-    body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:20px;">No companies yet — add one above.</td></tr>';
+    body.innerHTML = `<tr><td colspan="8" style="padding:24px 12px;">
+      <div class="ss-empty-state">
+        <i class="fas fa-bookmark"></i>
+        <h4>No companies in your watchlist</h4>
+        <p>Add a symbol above to start tracking price changes and receive alerts.</p>
+      </div>
+    </td></tr>`;
     return;
   }
   body.innerHTML = items.map(i => {
@@ -87,14 +208,14 @@ function renderRows(items) {
     const chgColor = chg === null ? '#94a3b8' : (chg >= 0 ? '#16a34a' : '#dc2626');
     const chgSign = chg !== null && chg >= 0 ? '+' : '';
     return `<tr data-id="${i.id}">
-      <td><b>${i.symbol}</b></td>
-      <td style="color:#94a3b8;">${i.name}</td>
-      <td>${fmtNum(i.price)}</td>
-      <td style="color:${chgColor};">${chg === null ? '—' : chgSign + fmtNum(chg) + '%'}</td>
-      <td><input type="number" class="ss-mini" data-f="threshold_pct" value="${i.threshold_pct ?? ''}" placeholder="default" min="0.1" max="100" step="0.1"></td>
-      <td><input type="number" class="ss-mini" data-f="target_price_high" value="${i.target_price_high ?? ''}" step="0.01" min="0"></td>
-      <td><input type="number" class="ss-mini" data-f="target_price_low" value="${i.target_price_low ?? ''}" step="0.01" min="0"></td>
-      <td>
+      <td data-label="Symbol"><b>${i.symbol}</b></td>
+      <td data-label="Name" style="color:var(--text-secondary);">${i.name}</td>
+      <td data-label="Price">${fmtNum(i.price)}</td>
+      <td data-label="Change" style="color:${chgColor};">${chg === null ? '—' : chgSign + fmtNum(chg) + '%'}</td>
+      <td data-label="Threshold"><input type="number" class="ss-mini" data-f="threshold_pct" value="${i.threshold_pct ?? ''}" placeholder="default" min="0.1" max="100" step="0.1"></td>
+      <td data-label="Above"><input type="number" class="ss-mini" data-f="target_price_high" value="${i.target_price_high ?? ''}" step="0.01" min="0"></td>
+      <td data-label="Below"><input type="number" class="ss-mini" data-f="target_price_low" value="${i.target_price_low ?? ''}" step="0.01" min="0"></td>
+      <td data-label="">
         <button class="ss-btn ss-btn-small ss-btn-primary" data-act="save">Save</button>
         <button class="ss-btn ss-btn-small ss-btn-danger" data-act="del">Remove</button>
       </td>
@@ -109,13 +230,13 @@ function renderRows(items) {
         body[inp.dataset.f] = inp.value === '' ? null : parseFloat(inp.value);
       });
       const r = await api('/api/watchlist/' + id, { method:'PUT', body: JSON.stringify(body) });
-      alert(r.message || (r.status === 'success' ? 'Saved' : 'Error'));
+      if (window.toast) toast(r.message || (r.status === 'success' ? 'Saved' : 'Error'), r.status === 'success' ? 'success' : 'error');
     });
     tr.querySelector('[data-act="del"]').addEventListener('click', async () => {
       if (!confirm('Remove this symbol from your watchlist?')) return;
       const r = await api('/api/watchlist/' + id, { method:'DELETE' });
-      if (r.status === 'success') loadWatchlist();
-      else alert(r.message);
+      if (r.status === 'success') { if (window.toast) toast('Removed', 'success'); loadWatchlist(); }
+      else if (window.toast) toast(r.message || 'Error', 'error');
     });
   });
 }

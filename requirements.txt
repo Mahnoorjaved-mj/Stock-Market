@@ -1,15 +1,52 @@
+# Core
+Flask>=2.3,<4
+Flask-Cors>=4
+Flask-WTF>=1.2
+Flask-Limiter>=3.5
+Jinja2>=3.1
+itsdangerous>=2.1
+Werkzeug>=2.3
+
+# Data / numeric
 requests==2.31.0
 python-dotenv==1.0.0
 numpy
 pandas
 scikit-learn
 matplotlib
-Flask>=2.3
-Flask-Cors
-psycopg2-binary
-bcrypt>=4.0
-APScheduler>=3.10
-email-validator>=2.0
-pytz
 yfinance
-Jinja2>=3.1
+pytz
+
+# DB
+psycopg2-binary>=2.9
+
+# Auth / email
+bcrypt>=4.0
+email-validator>=2.0
+pyotp>=2.9
+
+# Scheduling
+APScheduler>=3.10
+
+# Caching
+redis>=5.0
+
+# Web push (Phase 3d)
+pywebpush>=2.0
+
+# Production server
+waitress>=2.1
+gunicorn>=21.2 ; sys_platform != "win32"
+
+# Migrations
+alembic>=1.13
+
+# Observability
+sentry-sdk[flask]>=1.40
+python-json-logger>=2.0
+
+# Dev / test
+pytest>=7.4
+pytest-cov>=4.1
+ruff>=0.3
+black>=24.0

@@ -1,0 +1,85 @@
+# Render.com one-click deploy blueprint.
+# Push this repo to GitHub, then visit https://render.com/deploy and paste the repo URL.
+#
+# Stack provisioned (all free tier):
+#   - web service (StockSense Flask + Waitress)
+#   - managed Postgres
+#   - keyValue (Redis-compatible) for cache + rate-limit
+services:
+  - type: web
+    name: stocksense-web
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd backend && python wsgi.py
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: APP_BASE_URL
+        sync: false   # set after first deploy to your render URL
+      - key: HOST
+        value: "0.0.0.0"
+      - key: PORT
+        value: "5000"
+      - key: DB_HOST
+        fromDatabase:
+          name: stocksense-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: stocksense-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: stocksense-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: stocksense-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: stocksense-db
+          property: password
+      - key: REDIS_URL
+        fromService:
+          name: stocksense-cache
+          type: keyvalue
+          property: connectionString
+      - key: RATELIMIT_STORAGE_URI
+        fromService:
+          name: stocksense-cache
+          type: keyvalue
+          property: connectionString
+      # ---- Fill these in via the dashboard (do not commit) ----
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_NAME
+        value: "StockSense Alerts"
+      - key: SENTRY_DSN
+        sync: false
+
+databases:
+  - name: stocksense-db
+    plan: free
+    databaseName: stock_alert_db
+    user: stocksense
+
+# Render's free Redis-compatible keyvalue store (was "redis" plan)
+- type: keyvalue
+  name: stocksense-cache
+  plan: free
+  region: oregon
+  ipAllowList: []

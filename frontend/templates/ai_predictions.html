@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}AI Stock Predictions - StockSense{% endblock %}
-{% block page_title %}🤖 AI Stock Predictions{% endblock %}
+{% block title %}AI Stock Predictions · StockSense{% endblock %}
+{% block page_title %}AI Predictions{% endblock %}
 
 {% block content %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js">
@@ -16,23 +16,24 @@
 
     /* AI Section */
     .ai-header {
-        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        color: #ffffff;
-        padding: 25px;
-        border-radius: 15px;
-        margin-bottom: 30px;
-        text-align: center;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        color: var(--text-primary);
+        padding: 20px 22px;
+        border-radius: var(--radius-lg);
+        margin-bottom: 24px;
     }
 
     .ai-header h2 {
-        font-size: 28px;
-        margin-bottom: 10px;
+        font-size: 18px;
+        margin-bottom: 6px;
+        font-weight: 600;
     }
 
     .ai-header p {
-        color: #dbeafe;
+        color: var(--text-secondary);
         max-width: 800px;
-        margin: 0 auto;
+        font-size: 13px;
     }
 
     /* Cards Grid */
@@ -289,7 +290,7 @@
 <div id="main-content">
     <div class="loading">
         <div class="spinner"></div>
-        <p>🤖 AI is analyzing stock patterns...</p>
+        <p><span class="ss-spinner" style="vertical-align:middle;"></span> AI is analyzing stock patterns…</p>
         <p class="text-secondary">Loading LSTM predictions</p>
     </div>
 </div>

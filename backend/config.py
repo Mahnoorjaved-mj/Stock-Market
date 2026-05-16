@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -35,10 +36,26 @@ class Config:
 
     DROP_AND_REBUILD_SCHEMA = _bool("DROP_AND_REBUILD_SCHEMA", False)
 
+    # Session config — plan.md §4a
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = not _bool("FLASK_DEBUG", True)
-    PERMANENT_SESSION_LIFETIME = 60 * 60 * 24 * 7  # 7 days
+    # 4-hour sliding window (was 7 days)
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=4)
+
+    # Rate-limit storage backend; defaults to in-memory but recommend redis in prod.
+    RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
+    RATELIMIT_DEFAULT = os.getenv("RATELIMIT_DEFAULT", "200 per minute")
+
+    # Redis cache (Phase 4e). Optional — falls back to in-process dict if absent.
+    REDIS_URL = os.getenv("REDIS_URL", "")
+
+    # Sentry DSN (Phase 4b).
+    SENTRY_DSN = os.getenv("SENTRY_DSN", "")
+
+    # CSRF
+    WTF_CSRF_TIME_LIMIT = None  # CSRF tokens valid for session lifetime
+    WTF_CSRF_HEADERS = ["X-CSRFToken"]
 
 
 config = Config()

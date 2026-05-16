@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Admin · Metrics{% endblock %}
+{% block page_title %}Metrics{% endblock %}
+{% block content %}
+<div class="kpi-grid">
+    <div class="kpi-tile">
+        <span class="kpi-label">Total users</span>
+        <span class="kpi-value" id="mUsers">—</span>
+    </div>
+    <div class="kpi-tile">
+        <span class="kpi-label">Active watchlist entries</span>
+        <span class="kpi-value" id="mWatchlist">—</span>
+    </div>
+    <div class="kpi-tile">
+        <span class="kpi-label">Alerts sent (24h)</span>
+        <span class="kpi-value" id="mAlerts24">—</span>
+    </div>
+    <div class="kpi-tile">
+        <span class="kpi-label">Login failures (24h)</span>
+        <span class="kpi-value" id="mLoginFail">—</span>
+    </div>
+</div>
+
+<section class="ss-card" style="margin-top:16px;">
+    <h3 class="ss-card-title"><i class="fas fa-clock-rotate-left"></i> Recent audit events</h3>
+    <div style="overflow-x:auto;">
+        <table class="ss-table">
+            <thead>
+                <tr><th>When</th><th>Action</th><th>User</th><th>IP</th></tr>
+            </thead>
+            <tbody id="auditBody"><tr><td colspan="4" style="text-align:center;color:var(--text-tertiary);padding:18px;">Loading…</td></tr></tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+fetch('/api/admin/metrics', { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(d => {
+        if (d.status !== 'success') {
+            document.getElementById('auditBody').innerHTML =
+                `<tr><td colspan="4" style="text-align:center;color:var(--color-down);padding:18px;">${d.message || 'Access denied'}</td></tr>`;
+            return;
+        }
+        document.getElementById('mUsers').textContent = d.metrics.users.toLocaleString();
+        document.getElementById('mWatchlist').textContent = d.metrics.watchlist.toLocaleString();
+        document.getElementById('mAlerts24').textContent = d.metrics.alerts_24h.toLocaleString();
+        document.getElementById('mLoginFail').textContent = d.metrics.login_failures_24h.toLocaleString();
+        const rows = d.audit || [];
+        document.getElementById('auditBody').innerHTML = rows.length === 0
+            ? `<tr><td colspan="4" style="text-align:center;color:var(--text-tertiary);padding:18px;">No events</td></tr>`
+            : rows.map(r => `<tr>
+                <td style="white-space:nowrap;">${r.occurred_at}</td>
+                <td><code style="font-family:var(--font-mono);font-size:12px;">${r.action}</code></td>
+                <td>${r.user_id ?? '—'}</td>
+                <td style="color:var(--text-secondary);">${r.ip || '—'}</td>
+            </tr>`).join('');
+    });
+</script>
+{% endblock %}

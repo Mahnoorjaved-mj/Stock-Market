@@ -1,23 +1,43 @@
+"""
+LSTM stock-prediction module.
+
+Deployment note: torch and matplotlib are heavy (~2 GB combined wheels) and
+will not fit in many free-tier build environments (Render free, Koyeb nano).
+This module degrades gracefully: when torch is unavailable, `ai_predictor`
+becomes a stub whose methods return synthetic / fallback responses. The
+public API surface stays the same, so app.py and the routes keep working.
+"""
 import requests
 import os
 import numpy as np
 import pandas as pd
 import math
 from datetime import datetime, timedelta
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-import matplotlib.pyplot as plt
 import warnings
 import json
 import pickle
 import time
 import yfinance as yf
 from pandas.tseries.offsets import BDay
-import warnings
 warnings.filterwarnings('ignore')
+
+# -------- Optional heavy deps (torch + matplotlib) --------
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    import torch.optim as optim
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    torch = None
+    nn = type("nn", (), {"Module": object})  # so `class X(nn.Module)` still parses
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
 
 # ============================================
 # REAL LSTM MODEL FOR STOCK PREDICTIONS (IMPROVED)
@@ -185,7 +205,7 @@ class RealLSTMPredictor:
             df['macd_signal'] = df['macd'].ewm(span=9, adjust=False).mean()
             
             # Fill NaN values safely
-            df = df.fillna(method='ffill').fillna(method='bfill')
+            df = df.ffill().bfill()
             
             # Remove any remaining NaN
             df = df.dropna()
@@ -1266,7 +1286,40 @@ class RealLSTMPredictor:
 # CREATE GLOBAL INSTANCE
 # ============================================
 
-ai_predictor = RealLSTMPredictor()
+class _StubPredictor:
+    """Drop-in replacement when torch is unavailable. All AI endpoints fall
+    back to the synthetic responses already handled in app.py routes."""
+    def __init__(self):
+        self.models = {}
+        self.scalers = {}
+        self.historical_cache = {}
+        self.device = "cpu"
+
+    def train_lstm_model(self, symbol, **kwargs):
+        return False, 0.0
+
+    def train_model(self, symbol, **kwargs):
+        return {"success": False, "reason": "torch_unavailable"}
+
+    def predict_future(self, symbol, days=7):
+        return None  # caller falls back to synthetic prediction
+
+    def get_sentiment_analysis(self, symbol):
+        return None
+
+    def get_top_picks(self, count=5):
+        return []
+
+
+if TORCH_AVAILABLE:
+    ai_predictor = RealLSTMPredictor()
+else:
+    import logging
+    logging.getLogger(__name__).warning(
+        "torch not installed — AI predictor running in stub mode. "
+        "Install torch to enable real LSTM predictions."
+    )
+    ai_predictor = _StubPredictor()
 
 # ============================================
 # TEST THE IMPROVED LSTM

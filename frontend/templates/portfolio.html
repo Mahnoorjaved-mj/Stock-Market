@@ -28,7 +28,7 @@
 <section class="ss-card" style="margin-top:20px;">
   <h3 class="ss-card-title"><i class="fas fa-table"></i> Holdings</h3>
   <div style="overflow-x:auto;">
-    <table class="ss-table" id="pfTable">
+    <table class="ss-table responsive" id="pfTable">
       <thead>
         <tr>
           <th>Symbol</th><th>Name</th><th>Qty</th><th>Buy price</th><th>Current</th>
@@ -62,23 +62,29 @@ function setTotals(t) {
 function render(items) {
   const tb = document.getElementById('pfBody');
   if (!items.length) {
-    tb.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#94a3b8;padding:20px;">No holdings yet — add one above.</td></tr>';
+    tb.innerHTML = `<tr><td colspan="11" style="padding:24px 12px;">
+      <div class="ss-empty-state">
+        <i class="fas fa-briefcase"></i>
+        <h4>No holdings yet</h4>
+        <p>Add your first position above to start tracking cost basis and P/L.</p>
+      </div>
+    </td></tr>`;
     return;
   }
   tb.innerHTML = items.map(i => {
     const c = i.pnl >= 0 ? '#16a34a' : '#dc2626';
     return `<tr data-id="${i.id}">
-      <td><b>${i.symbol}</b></td>
-      <td style="color:#94a3b8;">${i.name}</td>
-      <td>${i.quantity}</td>
-      <td>${fmt2(i.buy_price)}</td>
-      <td>${fmt2(i.current_price)}</td>
-      <td>${fmt2(i.cost_basis)}</td>
-      <td>${fmt2(i.current_value)}</td>
-      <td style="color:${c};">${i.pnl >= 0 ? '+' : ''}${fmt2(i.pnl)}</td>
-      <td style="color:${c};">${i.pnl_pct >= 0 ? '+' : ''}${fmt2(i.pnl_pct)}%</td>
-      <td>${i.buy_date}</td>
-      <td><button class="ss-btn ss-btn-small ss-btn-danger" data-act="del">Remove</button></td>
+      <td data-label="Symbol"><b>${i.symbol}</b></td>
+      <td data-label="Name" style="color:var(--text-secondary);">${i.name}</td>
+      <td data-label="Qty">${i.quantity}</td>
+      <td data-label="Buy price">${fmt2(i.buy_price)}</td>
+      <td data-label="Current">${fmt2(i.current_price)}</td>
+      <td data-label="Cost">${fmt2(i.cost_basis)}</td>
+      <td data-label="Value">${fmt2(i.current_value)}</td>
+      <td data-label="P/L" style="color:${c};">${i.pnl >= 0 ? '+' : ''}${fmt2(i.pnl)}</td>
+      <td data-label="P/L %" style="color:${c};">${i.pnl_pct >= 0 ? '+' : ''}${fmt2(i.pnl_pct)}%</td>
+      <td data-label="Buy date">${i.buy_date}</td>
+      <td data-label=""><button class="ss-btn ss-btn-small ss-btn-danger" data-act="del">Remove</button></td>
     </tr>`;
   }).join('');
   tb.querySelectorAll('[data-act="del"]').forEach(btn => {
@@ -86,8 +92,8 @@ function render(items) {
       const id = btn.closest('tr').dataset.id;
       if (!confirm('Remove this holding?')) return;
       const r = await api('/api/portfolio/' + id, { method:'DELETE' });
-      if (r.status === 'success') load();
-      else alert(r.message);
+      if (r.status === 'success') { if (window.toast) toast('Removed', 'success'); load(); }
+      else if (window.toast) toast(r.message || 'Error', 'error');
     });
   });
 }

@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0c" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>{% block title %}StockSense{% endblock %}</title>
     <script>
         // Pre-paint theme load — runs before stylesheet to avoid flash of wrong theme.
@@ -13,292 +17,391 @@
         })();
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
+        /* ============================================================
+           StockSense design tokens — single source of truth
+           ============================================================ */
         :root {
-            --bg-page-start: #0f172a;
-            --bg-page-end: #1e293b;
-            --bg-sidebar: #0b0f19;
-            --bg-header: rgba(15, 23, 42, 0.8);
-            --accent-blue: #3b82f6;
-            --accent-blue-soft: #60a5fa;
-            --text-primary: #ffffff;
-            --text-secondary: #94a3b8;
-            --card-bg: rgba(255, 255, 255, 0.06);
-            --hover-bg: rgba(255, 255, 255, 0.08);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --input-bg: #0b0f19;
-            --input-border: rgba(255, 255, 255, 0.1);
-            --footer-bg: #0b0f19;
-            --modal-bg: #0f172a;
-            /* Legacy aliases used by older inline templates */
-            --primary-blue: #3b82f6;
-            --sidebar-bg: #0b0f19;
+            --bg-app: #0a0a0c;
+            --bg-surface: #111114;
+            --bg-surface-hover: #161619;
+            --bg-elevated: #1a1a1f;
+            --bg-input: #131316;
+            --border-subtle: rgba(255,255,255,0.06);
+            --border: rgba(255,255,255,0.10);
+            --border-strong: rgba(255,255,255,0.15);
+            --text-primary: #f4f4f5;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #71717a;
+            --accent: #4f8cff;
+            --accent-hover: #3a7aef;
+            --accent-soft: rgba(79,140,255,0.10);
+            --color-up: #10b981;
+            --color-up-soft: rgba(16,185,129,0.10);
+            --color-down: #ef4444;
+            --color-down-soft: rgba(239,68,68,0.10);
+            --color-warn: #f59e0b;
+
+            --radius-sm: 6px;
+            --radius: 8px;
+            --radius-lg: 12px;
+
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+            /* Legacy aliases — keep templates from breaking */
+            --bg-page-start: var(--bg-app);
+            --bg-page-end: var(--bg-app);
+            --bg-sidebar: var(--bg-surface);
+            --bg-header: var(--bg-app);
+            --accent-blue: var(--accent);
+            --accent-blue-soft: var(--accent);
+            --card-bg: var(--bg-surface);
+            --hover-bg: var(--bg-surface-hover);
+            --border-color: var(--border);
+            --input-bg: var(--bg-input);
+            --input-border: var(--border);
+            --footer-bg: var(--bg-surface);
+            --modal-bg: var(--bg-elevated);
+            --primary-blue: var(--accent);
+            --sidebar-bg: var(--bg-surface);
         }
 
         :root[data-theme="light"] {
-            --bg-page-start: #f1f5f9;
-            --bg-page-end: #e2e8f0;
-            --bg-sidebar: #ffffff;
-            --bg-header: rgba(255, 255, 255, 0.85);
-            --accent-blue: #2563eb;
-            --accent-blue-soft: #3b82f6;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --card-bg: #ffffff;
-            --hover-bg: rgba(15, 23, 42, 0.05);
-            --border-color: rgba(15, 23, 42, 0.12);
-            --input-bg: #f8fafc;
-            --input-border: #cbd5e1;
-            --footer-bg: #f8fafc;
-            --modal-bg: #ffffff;
-            --primary-blue: #2563eb;
-            --sidebar-bg: #ffffff;
+            --bg-app: #fafafa;
+            --bg-surface: #ffffff;
+            --bg-surface-hover: #f4f4f5;
+            --bg-elevated: #ffffff;
+            --bg-input: #ffffff;
+            --border-subtle: rgba(0,0,0,0.05);
+            --border: rgba(0,0,0,0.10);
+            --border-strong: rgba(0,0,0,0.15);
+            --text-primary: #09090b;
+            --text-secondary: #52525b;
+            --text-tertiary: #71717a;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-soft: rgba(37,99,235,0.08);
+            --color-up: #059669;
+            --color-up-soft: rgba(5,150,105,0.08);
+            --color-down: #dc2626;
+            --color-down-soft: rgba(220,38,38,0.08);
         }
 
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html { font-family: var(--font-body); }
+
         body {
-            background: linear-gradient(135deg, var(--bg-page-start) 0%, var(--bg-page-end) 100%);
+            background: var(--bg-app);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
-            transition: background 0.3s ease, color 0.3s ease;
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        h1, h2, h3, h4, h5, h6 { line-height: 1.2; font-weight: 600; }
+
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: 4px;
         }
 
         /* Sidebar */
         .sidebar {
-            width: 250px;
-            background: var(--bg-sidebar);
-            padding: 30px 0;
+            width: 240px;
+            background: var(--bg-surface);
+            padding: 24px 0;
             height: 100vh;
             position: fixed;
             left: 0;
             top: 0;
-            border-right: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-subtle);
             z-index: 100;
-            transition: background 0.3s ease, border-color 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
-        
+
         .logo-container {
-            text-align: center;
-            margin-bottom: 40px;
-            padding: 0 25px;
+            padding: 0 20px 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        
+
         .logo {
-            font-size: 26px;
-            font-weight: 800;
-            background: linear-gradient(45deg, #60a5fa, #3b82f6);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
         }
-        
-        .logo-icon {
-            margin-right: 10px;
-            font-size: 24px;
+
+        .logo-mark {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent);
+            border-radius: 6px;
+            color: #fff;
+            font-weight: 700;
         }
-        
+        .logo-mark svg { display: block; }
+
         .nav-menu {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            padding: 0 15px;
+            gap: 2px;
+            padding: 0 12px;
         }
-        
+
         .nav-link {
+            position: relative;
             color: var(--text-secondary);
             text-decoration: none;
-            padding: 14px 20px;
+            padding: 9px 12px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            font-size: 15px;
+            gap: 12px;
+            border-radius: var(--radius-sm);
+            font-size: 13.5px;
             font-weight: 500;
+            transition: background 0.12s ease, color 0.12s ease;
         }
-        
+
         .nav-link:hover {
-            background: var(--hover-bg);
+            background: var(--bg-surface-hover);
             color: var(--text-primary);
-            transform: translateX(5px);
         }
-        
+
         .nav-link.active {
-            background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), transparent);
-            color: var(--accent-blue);
-            border-left: 3px solid var(--accent-blue);
+            background: var(--accent-soft);
+            color: var(--accent);
         }
-        
+
+        .nav-link.active::before {
+            content: "";
+            position: absolute;
+            left: -12px;
+            top: 6px;
+            bottom: 6px;
+            width: 2px;
+            background: var(--accent);
+            border-radius: 0 2px 2px 0;
+        }
+
         .nav-link i {
-            font-size: 18px;
-            width: 24px;
+            font-size: 14px;
+            width: 18px;
             text-align: center;
         }
-        
+
         /* Main Content */
         .main-content {
             flex: 1;
-            margin-left: 250px;
+            margin-left: 240px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
-        
+
         .top-header {
-            background: var(--bg-header);
-            backdrop-filter: blur(10px);
-            padding: 20px 30px;
-            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-app);
+            padding: 16px 28px;
+            border-bottom: 1px solid var(--border-subtle);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: background 0.3s ease, border-color 0.3s ease;
         }
 
         .page-title {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(45deg, var(--accent-blue-soft), var(--accent-blue));
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
         }
 
         .user-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .theme-toggle {
-            background: var(--card-bg);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            width: 38px;
-            height: 38px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            width: 32px;
+            height: 32px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 15px;
-            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+            font-size: 13px;
+            transition: background 0.12s ease, color 0.12s ease;
         }
         .theme-toggle:hover {
-            background: var(--hover-bg);
-            transform: translateY(-1px);
+            background: var(--bg-surface-hover);
+            color: var(--text-primary);
         }
 
         .time-display {
-            background: var(--card-bg);
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 14px;
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
+            background: transparent;
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 12.5px;
             font-weight: 500;
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-        
+        .time-display .conn-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--color-up);
+            display: inline-block;
+        }
+        .time-display.offline .conn-dot { background: var(--color-down); }
+
         /* Content Area */
         .content-container {
             flex: 1;
-            padding: 30px;
+            padding: 28px;
             overflow-y: auto;
         }
-        
+
         /* Footer */
         .footer {
-            background: var(--footer-bg);
-            padding: 20px 30px;
+            padding: 16px 28px;
             text-align: center;
+            color: var(--text-tertiary);
+            font-size: 12.5px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        /* ===== Mobile drawer trigger ===== */
+        .menu-toggle {
+            display: none;
+            background: transparent;
+            border: 1px solid var(--border);
             color: var(--text-secondary);
+            border-radius: var(--radius-sm);
+            width: 36px;
+            height: 36px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
             font-size: 14px;
-            border-top: 1px solid var(--border-color);
-            transition: background 0.3s ease, border-color 0.3s ease;
+            margin-right: 10px;
+            flex-shrink: 0;
         }
-        
-        /* Mobile Responsive */
+        .menu-toggle:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+
+        .sidebar-scrim {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease;
+        }
+        body.sidebar-open .sidebar-scrim { opacity: 1; pointer-events: auto; }
+
+        .top-header-left {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            flex: 1;
+        }
+        .page-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* ===== Mobile responsive ===== */
         @media (max-width: 1024px) {
-            .sidebar {
-                width: 220px;
-            }
-            .main-content {
-                margin-left: 220px;
-            }
+            .sidebar { width: 220px; }
+            .main-content { margin-left: 220px; }
         }
-        
+
+        /* Tablet & phone: sidebar becomes an off-canvas drawer */
+        @media (max-width: 880px) {
+            .menu-toggle { display: inline-flex; }
+            .sidebar {
+                width: 260px;
+                transform: translateX(-100%);
+                transition: transform 0.22s ease;
+                box-shadow: 4px 0 24px rgba(0,0,0,0.35);
+            }
+            body.sidebar-open .sidebar { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .top-header { padding: 12px 16px; gap: 8px; }
+            .content-container { padding: 18px 14px; }
+            .page-title { font-size: 18px; }
+            .user-info { gap: 6px; }
+            .user-info .theme-toggle { width: 36px; height: 36px; }
+        }
+
+        @media (max-width: 560px) {
+            .time-display {
+                font-size: 0;        /* hide text; keep just the connection dot */
+                padding: 0;
+                border: none;
+                background: transparent;
+                gap: 0;
+            }
+            .time-display .conn-dot { width: 8px; height: 8px; }
+            .page-title { font-size: 16px; }
+        }
+
+        @media (max-width: 400px) {
+            #cmdkBtn, #notifBtn { width: 36px; height: 36px; }
+            .top-header { padding: 10px 12px; }
+            .content-container { padding: 14px 10px; }
+        }
+
+        /* iOS: prevent 16px-input zoom by ensuring all form inputs are >= 16px */
         @media (max-width: 768px) {
-            .sidebar {
-                width: 70px;
-                padding: 20px 0;
-            }
-            
-            .logo-container span:not(.logo-icon),
-            .nav-link span {
-                display: none;
-            }
-            
-            .logo-container {
-                padding: 0 10px;
-            }
-            
-            .nav-link {
-                justify-content: center;
-                padding: 15px;
-            }
-            
-            .nav-link i {
-                font-size: 20px;
-            }
-            
-            .main-content {
-                margin-left: 70px;
-            }
-            
-            .page-title {
-                font-size: 22px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .sidebar {
-                width: 60px;
-            }
-            
-            .main-content {
-                margin-left: 60px;
-            }
-            
-            .top-header {
-                padding: 15px 20px;
-                flex-direction: column;
-                gap: 10px;
-                align-items: flex-start;
-            }
-            
-            .content-container {
-                padding: 20px;
-            }
+            input, select, textarea, button { font-size: 16px !important; }
         }
     </style>
 </head>
 <body>
     <!-- Sidebar Navigation -->
-    <nav class="sidebar">
+    <nav class="sidebar" id="primaryNav">
         <div class="logo-container">
-            <div class="logo">
-                <span class="logo-icon">📈</span>
+            <a href="/" class="logo" aria-label="StockSense home">
+                <span class="logo-mark" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 12L5.5 8L8.5 10.5L14 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M10 4H14V8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
                 <span>StockSense</span>
-            </div>
+            </a>
         </div>
         
         <div class="nav-menu">
@@ -347,15 +450,42 @@
         </div>
     </nav>
 
+    <!-- Mobile sidebar scrim -->
+    <div class="sidebar-scrim" id="sidebarScrim" aria-hidden="true"></div>
+
     <!-- Main Content Area -->
     <main class="main-content">
         <header class="top-header">
-            <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+            <div class="top-header-left">
+                <button class="menu-toggle" id="menuToggle" aria-label="Open navigation menu" aria-controls="primaryNav">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+            </div>
             <div class="user-info">
+                <button id="cmdkBtn" class="theme-toggle" aria-label="Open command palette (Ctrl+K)" title="Search (Ctrl+K)" onclick="window.openCmdk && window.openCmdk()">
+                    <i class="fas fa-magnifying-glass"></i>
+                </button>
+                <div style="position:relative;" class="nav-auth-wrapper">
+                    <button id="notifBtn" class="theme-toggle nav-auth" style="display:none;" aria-label="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span id="notifBadge" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--color-down);color:#fff;border-radius:10px;font-size:10px;padding:1px 5px;font-weight:600;"></span>
+                    </button>
+                    <div id="notifPanel" style="display:none;position:absolute;top:40px;right:0;width:320px;max-height:400px;overflow-y:auto;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,0.24);z-index:200;">
+                        <div style="padding:10px 14px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+                            <strong style="font-size:13px;">Notifications</strong>
+                            <button id="notifReadAll" class="ss-btn ss-btn-small ss-btn-ghost" style="padding:2px 8px;font-size:11px;">Mark read</button>
+                        </div>
+                        <div id="notifList" style="padding:6px;"></div>
+                    </div>
+                </div>
                 <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme" title="Toggle dark/light">
                     <i class="fas fa-moon"></i>
                 </button>
-                <div class="time-display" id="current-time">--:--:--</div>
+                <div class="time-display" id="current-time">
+                    <span class="conn-dot" aria-hidden="true"></span>
+                    <span id="current-time-text">--:--:--</span>
+                </div>
             </div>
         </header>
         
@@ -368,7 +498,34 @@
         </footer>
     </main>
 
+    <script src="{{ url_for('static', filename='toast.js') }}"></script>
+    <script src="{{ url_for('static', filename='cmdk.js') }}"></script>
     <script>
+        // ------------------------------------------------------------------
+        // CSRF: monkey-patch window.fetch so every state-changing request
+        // sent same-origin automatically carries the X-CSRFToken header.
+        // The token is set on the `csrf_token` cookie by the server.
+        // ------------------------------------------------------------------
+        (function () {
+            function getCsrf() {
+                const m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+                return m ? decodeURIComponent(m[1]) : '';
+            }
+            const origFetch = window.fetch;
+            window.fetch = function (input, init) {
+                init = init || {};
+                const method = (init.method || (typeof input === 'object' && input.method) || 'GET').toUpperCase();
+                const isUnsafe = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+                const url = typeof input === 'string' ? input : input.url;
+                const sameOrigin = url && (url.startsWith('/') || url.startsWith(location.origin));
+                if (isUnsafe && sameOrigin) {
+                    init.headers = new Headers(init.headers || {});
+                    if (!init.headers.has('X-CSRFToken')) init.headers.set('X-CSRFToken', getCsrf());
+                    if (init.credentials === undefined) init.credentials = 'same-origin';
+                }
+                return origFetch(input, init);
+            };
+        })();
         // Update current time
         function updateTime() {
             const now = new Date();
@@ -378,7 +535,8 @@
                 minute: '2-digit',
                 second: '2-digit'
             });
-            document.getElementById('current-time').textContent = timeStr;
+            const el = document.getElementById('current-time-text');
+            if (el) el.textContent = timeStr;
         }
 
         // Update time immediately and every second
@@ -421,6 +579,66 @@
                     try { localStorage.setItem('theme', next); } catch (e) {}
                     syncThemeIcon();
                 });
+            }
+
+            // Mobile sidebar drawer
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebarScrim = document.getElementById('sidebarScrim');
+            function closeSidebar() { document.body.classList.remove('sidebar-open'); }
+            function openSidebar()  { document.body.classList.add('sidebar-open'); }
+            if (menuToggle) {
+                menuToggle.addEventListener('click', () => {
+                    document.body.classList.toggle('sidebar-open');
+                });
+                sidebarScrim.addEventListener('click', closeSidebar);
+                document.querySelectorAll('.nav-link').forEach(a => a.addEventListener('click', closeSidebar));
+                document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSidebar(); });
+            }
+
+            // Notification center
+            const notifBtn = document.getElementById('notifBtn');
+            const notifPanel = document.getElementById('notifPanel');
+            const notifBadge = document.getElementById('notifBadge');
+            const notifList = document.getElementById('notifList');
+            function refreshNotifs() {
+                fetch('/api/notifications', { credentials: 'same-origin' })
+                    .then(r => r.json()).then(d => {
+                        if (d.status !== 'success') return;
+                        const items = d.items || [];
+                        if (d.unread > 0) {
+                            notifBadge.textContent = d.unread > 9 ? '9+' : String(d.unread);
+                            notifBadge.style.display = '';
+                        } else {
+                            notifBadge.style.display = 'none';
+                        }
+                        if (!items.length) {
+                            notifList.innerHTML = `<div style="padding:24px 12px;text-align:center;color:var(--text-tertiary);font-size:13px;">No notifications</div>`;
+                            return;
+                        }
+                        notifList.innerHTML = items.map(n => `
+                            <a href="${n.href || '#'}" style="display:block;padding:9px 10px;border-radius:6px;text-decoration:none;color:var(--text-primary);background:${n.read_at ? 'transparent' : 'var(--accent-soft)'};margin-bottom:2px;">
+                                <div style="font-size:13px;font-weight:500;">${n.title}</div>
+                                ${n.body ? `<div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${n.body}</div>` : ''}
+                            </a>`).join('');
+                    }).catch(() => {});
+            }
+            if (notifBtn) {
+                notifBtn.addEventListener('click', () => {
+                    notifPanel.style.display = notifPanel.style.display === 'none' ? '' : 'none';
+                    if (notifPanel.style.display !== 'none') refreshNotifs();
+                });
+                document.addEventListener('click', (e) => {
+                    if (!notifBtn.contains(e.target) && !notifPanel.contains(e.target)) {
+                        notifPanel.style.display = 'none';
+                    }
+                });
+                document.getElementById('notifReadAll')?.addEventListener('click', () => {
+                    fetch('/api/notifications/read-all', { method: 'POST' })
+                        .then(() => refreshNotifs());
+                });
+                // Poll every 60s
+                setInterval(refreshNotifs, 60000);
+                setTimeout(refreshNotifs, 1500);
             }
         });
     </script>

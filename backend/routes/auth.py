@@ -1,6 +1,5 @@
 import re
 import secrets
-import time
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Optional
@@ -10,6 +9,7 @@ from email_validator import EmailNotValidError, validate_email
 from flask import Blueprint, current_app, g, jsonify, request, session
 
 from services import email_service
+from services.audit import log_event
 from db import get_db_connection, get_dict_cursor
 
 auth_bp = Blueprint("auth", __name__)
@@ -19,22 +19,8 @@ USER_ID_KEY = "user_id"
 
 OTP_TTL_MIN = 10
 RESET_TOKEN_TTL_HOURS = 1
-PASSWORD_MIN_LEN = 8
-
-# Very small in-memory rate limiter: ip -> list[timestamps]
-_rate_log: dict[str, list[float]] = {}
-
-
-def _rate_limit(key: str, max_attempts: int = 5, window_sec: int = 300) -> bool:
-    """Return True if the request is allowed, False if rate-limited."""
-    now = time.time()
-    bucket = [t for t in _rate_log.get(key, []) if now - t < window_sec]
-    if len(bucket) >= max_attempts:
-        _rate_log[key] = bucket
-        return False
-    bucket.append(now)
-    _rate_log[key] = bucket
-    return True
+# Bumped from 8 → 10 per plan.md §4a password strength requirement.
+PASSWORD_MIN_LEN = 10
 
 
 def _hash_password(pw: str) -> str:
@@ -49,10 +35,18 @@ def _check_password(pw: str, hashed: str) -> bool:
 
 
 def _validate_password(pw: str) -> Optional[str]:
+    """Stricter password rules per plan.md §4a.
+    - min PASSWORD_MIN_LEN (10) characters
+    - at least one letter
+    - at least one digit
+    - at least one symbol OR length >= 14
+    """
     if not pw or len(pw) < PASSWORD_MIN_LEN:
         return f"Password must be at least {PASSWORD_MIN_LEN} characters"
     if not re.search(r"[A-Za-z]", pw) or not re.search(r"\d", pw):
         return "Password must contain at least one letter and one digit"
+    if len(pw) < 14 and not re.search(r"[^A-Za-z0-9]", pw):
+        return "Password must contain a symbol (or be at least 14 characters)"
     return None
 
 
@@ -97,9 +91,9 @@ def current_user() -> Optional[dict]:
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
-    """Step 1 of registration: validate inputs, store OTP, email it."""
-    if not _rate_limit(f"register:{request.remote_addr}", max_attempts=10, window_sec=600):
-        return jsonify({"status": "error", "message": "Too many attempts, try again later"}), 429
+    """Step 1 of registration: validate inputs, store OTP, email it.
+    Rate-limiting is applied via Flask-Limiter from app.py.
+    """
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
@@ -114,7 +108,19 @@ def register():
         with conn.cursor() as cur:
             cur.execute("SELECT 1 FROM users WHERE email=%s", (email,))
             if cur.fetchone():
+                log_event("register_email_taken", request=request, metadata={"email": email})
                 return jsonify({"status": "error", "message": "An account with that email already exists"}), 409
+
+            # OTP resend rate-limit: max 3 OTPs for the same email per OTP_TTL_MIN window.
+            cur.execute(
+                """SELECT COUNT(*) FROM otp_verification
+                   WHERE email=%s AND created_at > NOW() - INTERVAL '%s minutes'""",
+                (email, OTP_TTL_MIN),
+            )
+            (recent_count,) = cur.fetchone()
+            if recent_count >= 3:
+                log_event("register_otp_rate_limited", request=request, metadata={"email": email})
+                return jsonify({"status": "error", "message": "Too many verification attempts — try again in a few minutes"}), 429
 
             otp = f"{secrets.randbelow(1_000_000):06d}"
             pw_hash = _hash_password(password)
@@ -131,6 +137,7 @@ def register():
         conn.close()
 
     email_service.send_otp(email, otp)
+    log_event("register_otp_sent", request=request, metadata={"email": email})
     return jsonify({"status": "success", "message": "OTP sent to your email"})
 
 
@@ -181,13 +188,12 @@ def verify_otp():
     session[USER_ID_KEY] = user_id
     session[EMAIL_KEY] = email
     email_service.send_welcome(email, rec.get("name"))
+    log_event("register_success", user_id=user_id, request=request)
     return jsonify({"status": "success", "message": "Account created", "email": email})
 
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
-    if not _rate_limit(f"login:{request.remote_addr}", max_attempts=5, window_sec=300):
-        return jsonify({"status": "error", "message": "Too many attempts, try again later"}), 429
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
@@ -200,6 +206,7 @@ def login():
             cur.execute("SELECT * FROM users WHERE email=%s", (email,))
             user = cur.fetchone()
             if not user or not _check_password(password, user["password_hash"]):
+                log_event("login_failed", request=request, metadata={"email": email})
                 return jsonify({"status": "error", "message": "Invalid email or password"}), 401
             cur.execute("UPDATE users SET last_login_at=NOW() WHERE id=%s", (user["id"],))
         conn.commit()
@@ -209,13 +216,17 @@ def login():
     session.permanent = True
     session[USER_ID_KEY] = user["id"]
     session[EMAIL_KEY] = email
+    log_event("login_success", user_id=user["id"], request=request)
     return jsonify({"status": "success", "message": "Login successful", "email": email})
 
 
 @auth_bp.route("/logout", methods=["POST"])
 def logout():
+    uid = session.get(USER_ID_KEY)
     session.pop(USER_ID_KEY, None)
     session.pop(EMAIL_KEY, None)
+    if uid:
+        log_event("logout", user_id=uid, request=request)
     return jsonify({"status": "success"})
 
 
@@ -228,8 +239,6 @@ def check_auth():
 
 @auth_bp.route("/forgot-password", methods=["POST"])
 def forgot_password():
-    if not _rate_limit(f"forgot:{request.remote_addr}", max_attempts=5, window_sec=600):
-        return jsonify({"status": "error", "message": "Too many attempts, try again later"}), 429
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
     if not email:
@@ -250,6 +259,7 @@ def forgot_password():
                 )
                 conn.commit()
                 email_service.send_password_reset(email, token)
+                log_event("password_reset_requested", user_id=row["id"], request=request)
     finally:
         conn.close()
 
@@ -286,4 +296,83 @@ def reset_password():
     finally:
         conn.close()
 
+    log_event("password_reset_completed", user_id=rec["user_id"], request=request)
     return jsonify({"status": "success", "message": "Password updated"})
+
+
+# -------------------- TOTP 2FA (opt-in) --------------------
+
+@auth_bp.route("/api/2fa/setup", methods=["POST"])
+@login_required
+def twofa_setup():
+    """Generate a fresh TOTP secret and return the otpauth URI for QR rendering.
+    Secret is stored as `enabled=FALSE` until the user confirms with /verify.
+    """
+    try:
+        import pyotp
+    except ImportError:
+        return jsonify({"status": "error", "message": "2FA not available on this server"}), 501
+
+    secret = pyotp.random_base32()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO user_2fa_secrets (user_id, secret, enabled)
+                   VALUES (%s, %s, FALSE)
+                   ON CONFLICT (user_id) DO UPDATE SET secret=EXCLUDED.secret, enabled=FALSE""",
+                (g.user_id, secret),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    uri = pyotp.totp.TOTP(secret).provisioning_uri(name=g.user_email, issuer_name="StockSense")
+    return jsonify({"status": "success", "secret": secret, "otpauth": uri})
+
+
+@auth_bp.route("/api/2fa/verify", methods=["POST"])
+@login_required
+def twofa_verify():
+    try:
+        import pyotp
+    except ImportError:
+        return jsonify({"status": "error", "message": "2FA not available on this server"}), 501
+
+    code = (request.get_json(silent=True) or {}).get("code", "").strip()
+    if not code:
+        return jsonify({"status": "error", "message": "Code required"}), 400
+
+    conn = get_db_connection()
+    try:
+        with get_dict_cursor(conn) as cur:
+            cur.execute("SELECT secret FROM user_2fa_secrets WHERE user_id=%s", (g.user_id,))
+            row = cur.fetchone()
+            if not row:
+                return jsonify({"status": "error", "message": "Run /api/2fa/setup first"}), 400
+            totp = pyotp.TOTP(row["secret"])
+            if not totp.verify(code, valid_window=1):
+                log_event("2fa_verify_failed", user_id=g.user_id, request=request)
+                return jsonify({"status": "error", "message": "Invalid code"}), 400
+            cur.execute(
+                "UPDATE user_2fa_secrets SET enabled=TRUE, verified_at=NOW() WHERE user_id=%s",
+                (g.user_id,),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    log_event("2fa_enabled", user_id=g.user_id, request=request)
+    return jsonify({"status": "success", "message": "2FA enabled"})
+
+
+@auth_bp.route("/api/2fa/disable", methods=["POST"])
+@login_required
+def twofa_disable():
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM user_2fa_secrets WHERE user_id=%s", (g.user_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    log_event("2fa_disabled", user_id=g.user_id, request=request)
+    return jsonify({"status": "success", "message": "2FA disabled"})
