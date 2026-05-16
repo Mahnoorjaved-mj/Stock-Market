@@ -1,28 +1,30 @@
 """
 LSTM stock-prediction module.
 
-Deployment note: torch and matplotlib are heavy (~2 GB combined wheels) and
-will not fit in many free-tier build environments (Render free, Koyeb nano).
-This module degrades gracefully: when torch is unavailable, `ai_predictor`
-becomes a stub whose methods return synthetic / fallback responses. The
-public API surface stays the same, so app.py and the routes keep working.
+Deployment note: torch is a ~800 MB wheel (CPU build) and may not fit in
+the smallest free-tier build environments. This module degrades
+gracefully: when torch is unavailable, `ai_predictor` becomes a stub
+whose methods return synthetic / fallback responses. The public API
+surface stays the same, so app.py and the routes keep working.
 """
-import requests
 import os
-import numpy as np
-import pandas as pd
 import math
-from datetime import datetime, timedelta
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
-import warnings
 import json
 import pickle
 import time
+import warnings
+from datetime import datetime, timedelta
+
+import numpy as np
+import pandas as pd
+import requests
 import yfinance as yf
 from pandas.tseries.offsets import BDay
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+
 warnings.filterwarnings('ignore')
 
-# -------- Optional heavy deps (torch + matplotlib) --------
+# -------- Optional torch (graceful fallback when unavailable) --------
 try:
     import torch
     import torch.nn as nn
@@ -33,11 +35,6 @@ except ImportError:
     TORCH_AVAILABLE = False
     torch = None
     nn = type("nn", (), {"Module": object})  # so `class X(nn.Module)` still parses
-
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    plt = None
 
 # ============================================
 # REAL LSTM MODEL FOR STOCK PREDICTIONS (IMPROVED)
