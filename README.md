@@ -45,7 +45,7 @@ old/               archived Flask app (git-ignored, reference only)
 ```bash
 cd server
 pip install -r requirements.txt   # torch is optional — omit to skip AI (stub fallback)
-cp .env.example .env              # then fill in MONGO_URI, JWT_SECRET, SMTP, ALPHA_VANTAGE_KEY
+# create server/.env with: MONGO_URI, MONGO_DB_NAME, JWT_SECRET, SMTP_*, ALPHA_VANTAGE_KEY
 python main.py                    # starts on http://127.0.0.1:8000 (auto-reload when DEBUG=true)
 
 # Optional but recommended — isolate deps in a virtualenv first:
