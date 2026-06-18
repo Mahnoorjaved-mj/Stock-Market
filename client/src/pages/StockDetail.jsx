@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useApp } from '../context/context'
 import PriceChart from '../components/PriceChart'
+import { theme } from '../theme'
 
 const RANGES = ['5d', '1mo', '3mo', '1y', '5y']
 
@@ -83,8 +84,8 @@ export default function StockDetail() {
               {
                 label: symbol,
                 data: history.prices,
-                borderColor: 'var(--accent)',
-                backgroundColor: 'rgba(79,140,255,0.08)',
+                borderColor: theme.accent,
+                backgroundColor: theme.accentSoft,
               },
             ]}
           />
@@ -118,8 +119,8 @@ export default function StockDetail() {
                   {
                     label: 'Forecast',
                     data: pred.predictions?.prices || [],
-                    borderColor: 'var(--color-up)',
-                    backgroundColor: 'rgba(16,185,129,0.08)',
+                    borderColor: theme.up,
+                    backgroundColor: theme.upSoft,
                   },
                 ]}
               />

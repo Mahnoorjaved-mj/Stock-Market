@@ -44,11 +44,12 @@ old/               archived Flask app (git-ignored, reference only)
 
 ```bash
 cd server
-python -m venv .venv
-.venv\Scripts\activate            # Windows  (source .venv/bin/activate on macOS/Linux)
-pip install -r requirements.txt   # omit torch to skip AI (stub fallback)
+pip install -r requirements.txt   # torch is optional — omit to skip AI (stub fallback)
 cp .env.example .env              # then fill in MONGO_URI, JWT_SECRET, SMTP, ALPHA_VANTAGE_KEY
-uvicorn main:app --reload --port 8000
+python main.py                    # starts on http://127.0.0.1:8000 (auto-reload when DEBUG=true)
+
+# Optional but recommended — isolate deps in a virtualenv first:
+#   python -m venv .venv && .venv\Scripts\activate   (then run the two commands above)
 ```
 
 API docs: <http://127.0.0.1:8000/docs> · health: <http://127.0.0.1:8000/api/health>

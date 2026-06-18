@@ -8,6 +8,7 @@ import {
   Tooltip,
   Filler,
 } from 'chart.js'
+import { theme } from '../theme'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler)
 
@@ -26,10 +27,10 @@ export default function PriceChart({ labels, datasets, height = 280 }) {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: datasets.length > 1, labels: { color: '#a1a1aa' } } },
+    plugins: { legend: { display: datasets.length > 1, labels: { color: theme.chartLegend } } },
     scales: {
-      x: { ticks: { color: '#71717a', maxTicksLimit: 8 }, grid: { display: false } },
-      y: { ticks: { color: '#71717a' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+      x: { ticks: { color: theme.chartAxis, maxTicksLimit: 8 }, grid: { display: false } },
+      y: { ticks: { color: theme.chartAxis }, grid: { color: theme.chartGrid } },
     },
   }
   return (
