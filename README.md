@@ -15,7 +15,7 @@ email digests, and LSTM-based AI predictions.
 | Data     | Alpha Vantage (primary) + yfinance (fallback) |
 
 The previous Flask + PostgreSQL + Jinja implementation is archived under
-[`legacy/`](./legacy) for reference.
+`old/` (git-ignored, kept on disk for reference only).
 
 ---
 
