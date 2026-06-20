@@ -1,0 +1,56 @@
+# StockSense — FastAPI backend dependencies
+#
+#   pip install -r requirements.txt
+#
+# torch is optional: the AI predictor degrades to a stub when it's absent.
+
+# ---- Web framework ----
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+sse-starlette>=2.0
+slowapi>=0.1.9
+
+# ---- Database ----
+motor>=3.4
+pymongo>=4.6
+dnspython>=2.4        # required to resolve mongodb+srv:// (Atlas) URIs
+
+# ---- Config / validation ----
+pydantic>=2.6
+pydantic-settings>=2.2
+python-dotenv>=1.0
+
+# ---- Auth / email ----
+bcrypt>=4.0
+python-jose[cryptography]>=3.3
+email-validator>=2.0
+pyotp>=2.9
+
+# ---- Templating (email) ----
+Jinja2>=3.1
+
+# ---- Caching / rate-limit storage ----
+redis>=5.0
+
+# ---- Market data + numeric stack ----
+requests>=2.31
+yfinance>=0.2
+pandas>=2.0
+numpy>=1.24
+scikit-learn>=1.3
+pytz
+
+# ---- Scheduling ----
+APScheduler>=3.10
+
+# ---- AI predictions (LSTM via PyTorch CPU build) ----
+# Comment out to skip AI; the app falls back to synthetic data.
+torch>=2.0
+
+# ---- Observability ----
+sentry-sdk[fastapi]>=1.40
+
+# ---- Dev / test ----
+pytest>=7.4
+httpx>=0.27

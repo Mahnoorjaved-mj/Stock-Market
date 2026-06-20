@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Design tokens (ported from legacy frontend/templates/base.html) ===== */
+:root,
+[data-theme='dark'] {
+  --bg-app: #0a0a0c;
+  --bg-surface: #111114;
+  --bg-surface-hover: #161619;
+  --bg-elevated: #1a1a1f;
+  --bg-input: #131316;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  --accent: #4f8cff;
+  --accent-hover: #3a7aef;
+  --accent-soft: rgba(79, 140, 255, 0.1);
+  --color-up: #10b981;
+  --color-up-soft: rgba(16, 185, 129, 0.1);
+  --color-down: #ef4444;
+  --color-down-soft: rgba(239, 68, 68, 0.1);
+  --color-warn: #f59e0b;
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+
+[data-theme='light'] {
+  --bg-app: #fafafa;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f4f4f5;
+  --bg-elevated: #ffffff;
+  --bg-input: #ffffff;
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.15);
+  --text-primary: #09090b;
+  --text-secondary: #52525b;
+  --text-tertiary: #71717a;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.08);
+  --color-up: #059669;
+  --color-up-soft: rgba(5, 150, 105, 0.08);
+  --color-down: #dc2626;
+  --color-down-soft: rgba(220, 38, 38, 0.08);
+  --color-warn: #f59e0b;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-body);
+  }
+  body {
+    @apply bg-app text-primary antialiased;
+    margin: 0;
+  }
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .ss-card {
+    @apply bg-surface border border-line rounded-lg;
+  }
+  .ss-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-medium
+      bg-accent text-white transition-colors hover:bg-accent-hover disabled:opacity-50
+      disabled:cursor-not-allowed;
+  }
+  .ss-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-medium
+      bg-transparent text-secondary border border-line transition-colors hover:bg-surface-hover
+      hover:text-primary;
+  }
+  .ss-input {
+    @apply w-full rounded bg-input border border-line px-3 py-2 text-sm text-primary
+      placeholder:text-tertiary outline-none focus:border-accent;
+  }
+  .ss-label {
+    @apply block text-xs font-medium text-secondary mb-1.5;
+  }
+  .ss-table {
+    @apply w-full text-sm border-collapse;
+  }
+  .ss-table th {
+    @apply text-left text-xs font-medium text-tertiary px-3 py-2 border-b border-line;
+  }
+  .ss-table td {
+    @apply px-3 py-2.5 border-b border-subtle text-primary;
+  }
+}
+
+/* Toast slide-in (ported from legacy toast.js styling) */
+@keyframes ss-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
