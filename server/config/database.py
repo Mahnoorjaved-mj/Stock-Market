@@ -19,17 +19,34 @@ _client: AsyncIOMotorClient | None = None
 _db: AsyncIOMotorDatabase | None = None
 
 
-def connect() -> AsyncIOMotorDatabase:
+def connect() -> AsyncIOMotorDatabase | None:
     """Create the Motor client (idempotent) and return the database handle."""
     global _client, _db
     if _db is None:
-        _client = AsyncIOMotorClient(settings.MONGO_URI, serverSelectionTimeoutMS=3000)
+        uri = (settings.MONGO_URI or "").strip()
+        if not uri:
+            log.warning("MONGO_URI is not set. MongoDB features are currently inactive.")
+            return None
+
+        client_kwargs = {
+            "serverSelectionTimeoutMS": 10000,
+        }
+        # For MongoDB Atlas (mongodb+srv:// or TLS connections), provide certifi CA bundle
+        # to ensure reliable SSL handshakes on Windows.
+        if "mongodb+srv://" in uri or "ssl=true" in uri.lower() or "tls=true" in uri.lower():
+            try:
+                import certifi
+                client_kwargs["tlsCAFile"] = certifi.where()
+            except Exception:
+                pass
+
+        _client = AsyncIOMotorClient(uri, **client_kwargs)
         _db = _client[settings.MONGO_DB_NAME]
-        log.info("Connected to MongoDB db=%s", settings.MONGO_DB_NAME)
+        log.info("Connected to MongoDB Atlas db=%s", settings.MONGO_DB_NAME)
     return _db
 
 
-def get_db() -> AsyncIOMotorDatabase:
+def get_db() -> AsyncIOMotorDatabase | None:
     if _db is None:
         return connect()
     return _db
@@ -43,53 +60,73 @@ def close() -> None:
         _db = None
 
 
-# ---- Collection accessors (one per legacy table) ----
+def _require_db() -> AsyncIOMotorDatabase:
+    db = get_db()
+    if db is None:
+        raise RuntimeError("MongoDB connection is not configured. Please set MONGO_URI in server/.env.")
+    return db
+
+
+# ---- Collection accessors ----
 def users():
-    return get_db()["users"]
+    return _require_db()["users"]
 
 
 def otp():
-    return get_db()["otp_verification"]
+    return _require_db()["otp_verification"]
 
 
 def reset_tokens():
-    return get_db()["password_reset_tokens"]
+    return _require_db()["password_reset_tokens"]
 
 
 def watchlist():
-    return get_db()["watchlist"]
+    return _require_db()["watchlist"]
 
 
 def portfolio():
-    return get_db()["portfolio"]
+    return _require_db()["portfolio"]
 
 
 def alert_history():
-    return get_db()["alert_history"]
+    return _require_db()["alert_history"]
 
 
 def alert_rules():
-    return get_db()["alert_rules"]
+    return _require_db()["alert_rules"]
 
 
 def audit_events():
-    return get_db()["audit_events"]
+    return _require_db()["audit_events"]
 
 
 def twofa():
-    return get_db()["user_2fa_secrets"]
+    return _require_db()["user_2fa_secrets"]
 
 
 def notifications():
-    return get_db()["notifications"]
+    return _require_db()["notifications"]
 
 
 def push_subs():
-    return get_db()["push_subscriptions"]
+    return _require_db()["push_subscriptions"]
+
+
+def stock_quotes():
+    return _require_db()["stock_quotes"]
+
+
+def predictions_history():
+    return _require_db()["predictions_history"]
 
 
 async def ensure_indexes() -> None:
-    """Create unique/lookup indexes mirroring the legacy SQL schema."""
+    """Create unique/lookup indexes mirroring the application schema."""
+    db = get_db()
+    if db is None:
+        log.warning("Skipping MongoDB index creation: MONGO_URI is not set.")
+        return
+
     await users().create_index([("email", ASCENDING)], unique=True)
     await otp().create_index([("email", ASCENDING)])
     await otp().create_index([("expires_at", ASCENDING)], expireAfterSeconds=0)
@@ -107,4 +144,7 @@ async def ensure_indexes() -> None:
     await twofa().create_index([("user_id", ASCENDING)], unique=True)
     await notifications().create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
     await push_subs().create_index([("endpoint", ASCENDING)], unique=True)
+    await stock_quotes().create_index([("symbol", ASCENDING)], unique=True)
+    await stock_quotes().create_index([("updated_at", DESCENDING)])
+    await predictions_history().create_index([("symbol", ASCENDING), ("created_at", DESCENDING)])
     log.info("MongoDB indexes ensured")

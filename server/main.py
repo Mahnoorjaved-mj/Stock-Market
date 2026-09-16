@@ -128,8 +128,12 @@ async def health():
 
     db_ok, db_error = False, None
     try:
-        await get_db().command("ping")
-        db_ok = True
+        db = get_db()
+        if db is not None:
+            await db.command("ping")
+            db_ok = True
+        else:
+            db_error = "MONGO_URI is not set"
     except Exception as e:
         db_error = str(e)
 
