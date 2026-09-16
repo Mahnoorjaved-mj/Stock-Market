@@ -18,8 +18,11 @@ ENV/
 
 # ===== Environment / secrets =====
 .env
+.env.*
 .env.local
 .env.*.local
+**/.env
+**/.env.*
 *.pem
 *.key
 credentials.json
