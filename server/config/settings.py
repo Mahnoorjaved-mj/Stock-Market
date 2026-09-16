@@ -5,13 +5,17 @@ config surface of the legacy Flask `config.py`, but swaps Postgres for
 MongoDB and Flask sessions for JWT.
 """
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_SERVER_DIR = Path(__file__).resolve().parent.parent
+_ROOT_DIR = _SERVER_DIR.parent
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(_SERVER_DIR / ".env", _ROOT_DIR / ".env", ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -24,7 +28,7 @@ class Settings(BaseSettings):
     FRONTEND_ORIGIN: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     # ---- MongoDB ----
-    MONGO_URI: str = "mongodb://localhost:27017"
+    MONGO_URI: str = ""
     MONGO_DB_NAME: str = "stocksense"
 
     # ---- JWT auth ----
