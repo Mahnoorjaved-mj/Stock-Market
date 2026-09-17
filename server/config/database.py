@@ -19,11 +19,27 @@ _client: AsyncIOMotorClient | None = None
 _db: AsyncIOMotorDatabase | None = None
 
 
+def _normalize_uri(uri: str) -> str:
+    uri = (uri or "").strip()
+    if "://" in uri and "@" in uri:
+        try:
+            prefix, rest = uri.split("://", 1)
+            user_pass, host = rest.split("@", 1)
+            if ":" in user_pass:
+                user, pw = user_pass.split(":", 1)
+                if pw.startswith("<") and pw.endswith(">"):
+                    pw = pw[1:-1]
+                    return f"{prefix}://{user}:{pw}@{host}"
+        except Exception:
+            pass
+    return uri
+
+
 def connect() -> AsyncIOMotorDatabase | None:
     """Create the Motor client (idempotent) and return the database handle."""
     global _client, _db
     if _db is None:
-        uri = (settings.MONGO_URI or "").strip()
+        uri = _normalize_uri(settings.MONGO_URI)
         if not uri:
             log.warning("MONGO_URI is not set. MongoDB features are currently inactive.")
             return None
