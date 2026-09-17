@@ -31,7 +31,7 @@ def _render(template_name: str, **ctx) -> str:
 
 def _send(to_email: str, subject: str, html_body: str, text_fallback: Optional[str] = None) -> bool:
     if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        print(f"⚠️  SMTP not configured; skipping email to {to_email} ({subject!r})")
+        print(f"[SMTP] Info: SMTP not configured; skipping email to {to_email} ({subject!r})")
         return False
     try:
         msg = MIMEMultipart("alternative")
@@ -48,7 +48,7 @@ def _send(to_email: str, subject: str, html_body: str, text_fallback: Optional[s
             server.send_message(msg)
         return True
     except Exception as e:
-        print(f"❌ Email send failed to {to_email}: {e}")
+        print(f"[SMTP] Error: Email send failed to {to_email}: {e}")
         traceback.print_exc()
         return False
 
