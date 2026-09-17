@@ -50,7 +50,7 @@ async def _was_recently_sent(user_id: str, symbol: str, alert_type: str) -> bool
 
 async def evaluate_user_alerts() -> dict:
     started = datetime.now(timezone.utc)
-    print(f"\n🔔 [alert_sweep] starting at {started.isoformat()}")
+    print(f"\n[Alerts Sweep] starting at {started.isoformat()}")
 
     sent = skipped = errors = 0
     user_cache: dict[str, dict] = {}

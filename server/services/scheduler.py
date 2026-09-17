@@ -52,7 +52,7 @@ def start_scheduler() -> AsyncIOScheduler:
 
     sched.start()
     _scheduler = sched
-    print("⏰ Scheduler started: alert sweeps every 15 min during US market hours; digests scheduled")
+    print("[Scheduler] Started: alert sweeps every 15 min during US market hours; digests scheduled")
     return sched
 
 
