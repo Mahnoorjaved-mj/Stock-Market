@@ -62,9 +62,13 @@ async def register(email: str, password: str, name: str | None, request: Request
             "created_at": now,
         }
     )
-    email_service.send_otp(email, code)
+    email_sent = email_service.send_otp(email, code)
     await log_event("register_otp_sent", request=request, metadata={"email": email})
-    return {"status": "success", "message": "OTP sent to your email"}
+    payload = {"status": "success", "message": "OTP sent to your email"}
+    if not email_sent:
+        payload["dev_otp"] = code
+        payload["message"] = f"OTP: {code} (SMTP unconfigured)"
+    return payload
 
 
 async def verify_otp(email: str, code: str, request: Request) -> dict:
