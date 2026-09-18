@@ -657,7 +657,7 @@ class RealLSTMPredictor:
             model.eval()
             self.enable_mc_dropout(model)
 
-            n_samples = 50
+            n_samples = 12
             all_predictions = []
 
             with torch.no_grad():
@@ -1051,76 +1051,86 @@ class RealLSTMPredictor:
     # ============================================
     
     def get_top_picks(self, count=5):
-        """Get top picks based on LSTM predictions"""
-        # Updated for 2025 - focus on AI and tech leaders
-        symbols = ['AAPL', 'MSFT', 'NVDA', 'AMD', 'GOOGL', 'AMZN', 'META', 'TSLA', 'ADBE', 'CRM']
-        
-        picks = []
-        
-        for symbol in symbols:
+        """Fast dynamic top picks. Never trains an LSTM during a dashboard request."""
+        cache_key = f"top_picks_{count}"
+        now = time.time()
+        if (cache_key in self.prediction_cache and
+                now - self.prediction_cache_time.get(cache_key, 0) < self.prediction_cache_ttl):
+            return self.prediction_cache[cache_key]
+
+        symbols = ['AAPL', 'MSFT', 'NVDA', 'AMD', 'GOOGL']
+
+        def analyze(symbol):
             try:
-                sentiment_result = self.get_sentiment_analysis(symbol)
-                
-                if sentiment_result["success"]:
-                    sent = sentiment_result["sentiment"]
-                    
-                    # Score calculation for ranking
-                    score = 0
-                    
-                    # Base score from sentiment
-                    sentiment_scores = {
-                        "STRONG_BUY": 100,
-                        "BUY": 80,
-                        "HOLD": 50,
-                        "SELL": 20,
-                        "STRONG_SELL": 0
-                    }
-                    
-                    base_score = sentiment_scores.get(sent["sentiment"], 50)
-                    
-                    # Adjust for confidence
-                    confidence_factor = sent["confidence"] / 100
-                    
-                    # Adjust for predicted change (positive changes are better)
-                    change_factor = 1 + (sent["predicted_change"] / 100)
-                    
-                    # Combined score
-                    score = base_score * confidence_factor * change_factor
-                    
-                    # Only include BUY or STRONG_BUY with decent confidence
-                    if sent["sentiment"] in ["BUY", "STRONG_BUY"] and sent["confidence"] > 60:
-                        picks.append({
-                            "symbol": symbol,
-                            "name": self._get_stock_name(symbol),
-                            "sentiment": sent["sentiment"],
-                            "confidence": sent["confidence"],
-                            "color": sent["color"],
-                            "emoji": sent["emoji"],
-                            "current_price": sent["current_price"],
-                            "predicted_change": sent["predicted_change"],
-                            "reasoning": sent.get("reasoning", "AI analysis based on LSTM model"),
-                            "score": round(score, 1)
-                        })
-                        
-                        print(f"   ✅ {symbol}: {sent['sentiment']} ({sent['confidence']}%), "
-                              f"Change: {sent['predicted_change']:+.1f}%, Score: {score:.1f}")
-                
-            except Exception as e:
-                print(f"   ⚠️ Error analyzing {symbol}: {e}")
-                continue
-        
-        # Sort by score
+                df = self.get_historical_data(symbol, period='3mo')
+                if df is None or len(df) < 30:
+                    return None
+                current_price = float(df['close'].iloc[-1])
+
+                # Only use an already-trained model. Training stays in the
+                # dedicated training endpoint/job so the dashboard stays fast.
+                model, scaler, metadata = self.load_lstm_model(symbol)
+                if model is not None and scaler is not None:
+                    prediction = self.predict_with_lstm(symbol, days=7)
+                    if prediction and prediction.get("success"):
+                        pred_change = float(prediction["predictions"]["prediction_change"])
+                        confidence = float(prediction.get("confidence", 65))
+                        if pred_change >= 3:
+                            sentiment, emoji, color = "STRONG_BUY", "🚀", "#16a34a"
+                        elif pred_change >= 1:
+                            sentiment, emoji, color = "BUY", "📈", "#22c55e"
+                        elif pred_change >= -1:
+                            sentiment, emoji, color = "HOLD", "⚖️", "#f59e0b"
+                        elif pred_change >= -3:
+                            sentiment, emoji, color = "SELL", "📉", "#ef4444"
+                        else:
+                            sentiment, emoji, color = "STRONG_SELL", "🔥", "#991b1b"
+                        return {
+                            "symbol": symbol, "name": self._get_stock_name(symbol),
+                            "sentiment": sentiment, "confidence": round(confidence, 1),
+                            "color": color, "emoji": emoji,
+                            "current_price": round(current_price, 2),
+                            "predicted_change": round(pred_change, 2),
+                            "reasoning": "AI analysis from trained LSTM model",
+                            "score": round(max(0, min(100, confidence + pred_change * 2)), 1),
+                        }
+
+                # Fast data-driven fallback; no hardcoded prices/predictions.
+                recent = df['close'].tail(10)
+                momentum = ((float(recent.iloc[-1]) / float(recent.iloc[0])) - 1) * 100
+                volatility = float(df['returns'].tail(20).std() * 100)
+                predicted_change = max(-5.0, min(5.0, momentum * 0.7))
+                confidence = max(55.0, min(78.0, 72.0 - volatility * 0.8))
+                if predicted_change >= 2:
+                    sentiment, emoji, color = "STRONG_BUY", "🚀", "#16a34a"
+                elif predicted_change >= 0.5:
+                    sentiment, emoji, color = "BUY", "📈", "#22c55e"
+                elif predicted_change >= -0.5:
+                    sentiment, emoji, color = "HOLD", "⚖️", "#f59e0b"
+                elif predicted_change >= -2:
+                    sentiment, emoji, color = "SELL", "📉", "#ef4444"
+                else:
+                    sentiment, emoji, color = "STRONG_SELL", "🔥", "#991b1b"
+                return {
+                    "symbol": symbol, "name": self._get_stock_name(symbol),
+                    "sentiment": sentiment, "confidence": round(confidence, 1),
+                    "color": color, "emoji": emoji, "current_price": round(current_price, 2),
+                    "predicted_change": round(predicted_change, 2),
+                    "reasoning": "Live historical momentum analysis",
+                    "score": round(max(0, min(100, confidence + predicted_change * 2)), 1),
+                }
+            except Exception as exc:
+                print(f"   ⚠️ Fast top-pick analysis failed for {symbol}: {exc}")
+                return None
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            picks = [r for r in executor.map(analyze, symbols) if r is not None]
         picks.sort(key=lambda x: x["score"], reverse=True)
-        
-        # Ensure we have some picks
-        if not picks:
-            print("⚠️ No LSTM picks available, using fallback")
-            picks = self._get_fallback_top_picks(count)
-        elif len(picks) > count:
-            picks = picks[:count]
-        
+        picks = picks[:count]
+        self.prediction_cache[cache_key] = picks
+        self.prediction_cache_time[cache_key] = now
         return picks
-    
+
     def _get_stock_name(self, symbol):
         names = {
             "AAPL": "Apple Inc.",

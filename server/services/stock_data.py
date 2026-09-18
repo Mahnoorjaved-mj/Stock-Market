@@ -761,46 +761,49 @@ def fetch_stock_data(symbol: str, country: str, currency: str, name: str, sector
             "source": "error"
         }
 
+# Fast in-process cache: avoids refetching all stocks on every dashboard request.
+_LIVE_DATA_CACHE = None
+_LIVE_DATA_CACHE_TIME = 0.0
+_LIVE_DATA_CACHE_TTL = 60  # seconds
+
 def get_live_data():
-    """Fast global stock snapshot using one batched yfinance download."""
-    print(f"\n📊 FETCHING 400 GLOBAL STOCKS - {datetime.now().strftime('%H:%M:%S')}")
+    """Fast global stock snapshot using one batched yfinance request + short cache."""
+    global _LIVE_DATA_CACHE, _LIVE_DATA_CACHE_TIME
+
+    now = time.time()
+    if _LIVE_DATA_CACHE is not None and (now - _LIVE_DATA_CACHE_TIME) < _LIVE_DATA_CACHE_TTL:
+        return _LIVE_DATA_CACHE
+
     stocks = STOCK_DEFINITIONS
     countries_covered = {s["country"] for s in stocks}
     symbols = [s["symbol"] for s in stocks]
-    stocks_data = []
-    total_volume = 0
-    positive_stocks = 0
-    sources_used = {}
+    # Yahoo uses '-' for a few dotted tickers such as BRK.B.
+    yf_symbols = [s.replace(".", "-") if s.endswith(".B") else s for s in symbols]
 
-    print(f"📈 Processing {len(stocks)} stocks from {len(countries_covered)} countries...")
+    stocks_data, total_volume, positive_stocks, sources_used = [], 0, 0, {}
+    print(f"\n📊 FAST MARKET SNAPSHOT: {len(stocks)} stocks / {len(countries_covered)} countries")
 
     try:
         data = yf.download(
-            tickers=symbols,
-            period="5d",
-            interval="1d",
-            group_by="ticker",
-            auto_adjust=False,
-            threads=True,
-            progress=False,
-            timeout=10,
+            tickers=yf_symbols, period="5d", interval="1d",
+            group_by="ticker", auto_adjust=False, threads=True,
+            progress=False, timeout=8,
         )
     except Exception as exc:
         print(f"❌ Batch market-data request failed: {exc}")
         data = pd.DataFrame()
 
-    for stock in stocks:
+    for stock, yf_symbol in zip(stocks, yf_symbols):
         symbol = stock["symbol"]
         try:
             if data.empty:
                 raise ValueError("No batch data")
             if isinstance(data.columns, pd.MultiIndex):
-                if symbol not in data.columns.get_level_values(0):
+                if yf_symbol not in data.columns.get_level_values(0):
                     raise ValueError("Ticker not returned")
-                hist = data[symbol].dropna(how="all")
+                hist = data[yf_symbol].dropna(how="all")
             else:
                 hist = data.dropna(how="all")
-
             if hist.empty or "Close" not in hist.columns:
                 raise ValueError("No close price")
 
@@ -809,65 +812,52 @@ def get_live_data():
                 raise ValueError("No valid close")
             price = float(close.iloc[-1])
             previous = float(close.iloc[-2]) if len(close) > 1 else price
-            change = price - previous
-            change_pct = (change / previous * 100) if previous else 0.0
-            volume = int(pd.to_numeric(hist.get("Volume", pd.Series(dtype=float)), errors="coerce").dropna().iloc[-1]) if "Volume" in hist.columns and not pd.to_numeric(hist["Volume"], errors="coerce").dropna().empty else 0
-            chart_prices = close.tail(7).tolist()
+            change_pct = ((price - previous) / previous * 100) if previous else 0.0
+
+            vol_series = (pd.to_numeric(hist["Volume"], errors="coerce").dropna()
+                          if "Volume" in hist.columns else pd.Series(dtype=float))
+            volume = int(vol_series.iloc[-1]) if not vol_series.empty else 0
+            chart_prices = [float(x) for x in close.tail(7).tolist()]
             direction = "up" if change_pct >= 0 else "down"
 
             result = {
-                "symbol": symbol,
-                "name": stock["name"],
-                "price": round(price, 2),
-                "change_percent": round(change_pct, 2),
-                "direction": direction,
-                "volume": volume,
-                "chart": generate_chart(chart_prices, change_pct, direction),
-                "country": stock["country"],
-                "currency": stock["currency"],
-                "sector": stock["sector"],
-                "success": True,
-                "source": "yfinance_batch",
+                "symbol": symbol, "name": stock["name"], "price": round(price, 2),
+                "change_percent": round(change_pct, 2), "direction": direction,
+                "volume": volume, "chart": generate_chart(chart_prices, change_pct, direction),
+                "country": stock["country"], "currency": stock["currency"],
+                "sector": stock["sector"], "success": True, "source": "yfinance_batch",
             }
             stocks_data.append(result)
             total_volume += volume
-            if change_pct >= 0:
-                positive_stocks += 1
+            positive_stocks += int(change_pct >= 0)
             sources_used["yfinance_batch"] = sources_used.get("yfinance_batch", 0) + 1
         except Exception:
             stocks_data.append({
                 "symbol": symbol, "name": stock["name"], "price": 0,
                 "change_percent": 0, "direction": "neutral", "volume": 0,
                 "chart": "", "country": stock["country"], "currency": stock["currency"],
-                "sector": stock["sector"], "success": False, "source": "unavailable"
+                "sector": stock["sector"], "success": False, "source": "unavailable",
             })
 
     successful = [s for s in stocks_data if s["success"] and s["price"] > 0]
     sentiment = (positive_stocks / len(successful) * 100) if successful else 50.0
     volatility = (sum(abs(s["change_percent"]) for s in successful) / len(successful)) if successful else 0.0
-
-    # Top Stock Picks: selected from live API results, never hardcoded prices.
     top_stock_picks = sorted(
-        successful,
-        key=lambda s: (abs(s["change_percent"]), s["volume"]),
-        reverse=True,
+        successful, key=lambda s: (abs(s["change_percent"]), s["volume"]), reverse=True
     )[:6]
 
-    return {
+    result = {
         "market_indicators": {
-            "sentiment": round(sentiment, 1),
-            "volatility": round(volatility, 2),
-            "total_stocks": 400,
-            "total_volume": total_volume,
+            "sentiment": round(sentiment, 1), "volatility": round(volatility, 2),
+            "total_stocks": len(stocks), "total_volume": total_volume,
             "countries_covered": len(countries_covered),
-            "countries_list": sorted(countries_covered),
-            "market_status": "Open",
-            "data_sources": sources_used,
-            "last_updated": datetime.now().isoformat(),
+            "countries_list": sorted(countries_covered), "market_status": "Open",
+            "data_sources": sources_used, "last_updated": datetime.now().isoformat(),
         },
-        "stocks_data": stocks_data,
-        "top_stock_picks": top_stock_picks,
+        "stocks_data": stocks_data, "top_stock_picks": top_stock_picks,
     }
+    _LIVE_DATA_CACHE, _LIVE_DATA_CACHE_TIME = result, now
+    return result
 
 if __name__ == "__main__":
     # Test the updated code
