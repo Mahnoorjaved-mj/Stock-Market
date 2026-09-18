@@ -764,7 +764,7 @@ def fetch_stock_data(symbol: str, country: str, currency: str, name: str, sector
 # Fast in-process cache: avoids refetching all stocks on every dashboard request.
 _LIVE_DATA_CACHE = None
 _LIVE_DATA_CACHE_TIME = 0.0
-_LIVE_DATA_CACHE_TTL = 60  # seconds
+_LIVE_DATA_CACHE_TTL = 120  # seconds; avoids repeated Yahoo calls on refresh
 
 def get_live_data():
     """Fast global stock snapshot using one batched yfinance request + short cache."""
@@ -791,6 +791,11 @@ def get_live_data():
         )
     except Exception as exc:
         print(f"❌ Batch market-data request failed: {exc}")
+        # If Yahoo is temporarily slow/rate-limited, serve the last snapshot
+        # instead of making the dashboard wait again.
+        if _LIVE_DATA_CACHE is not None:
+            print("⚡ Serving previous market snapshot because live refresh failed.")
+            return _LIVE_DATA_CACHE
         data = pd.DataFrame()
 
     for stock, yf_symbol in zip(stocks, yf_symbols):

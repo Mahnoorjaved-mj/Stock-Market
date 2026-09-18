@@ -125,6 +125,11 @@ class RealLSTMPredictor:
         self.scaler_cache = {}
         self.data_cache = {}
         self.cache_time = {}
+        # Fast dashboard caches. Never train during a normal dashboard request.
+        self.prediction_cache = {}
+        self.prediction_cache_time = {}
+        self.prediction_cache_ttl = 900  # 15 minutes
+        self.historical_cache_ttl = 300  # 5 minutes
         
         # Model parameters
         self.sequence_length = 30  # Reduced for better generalization
@@ -575,15 +580,10 @@ class RealLSTMPredictor:
             model, scaler, metadata = self.load_lstm_model(symbol)
 
             if model is None or scaler is None:
-                print(f"⚠️ No LSTM model found for {symbol}, training new one...")
-                success, _ = self.train_lstm_model(symbol, epochs=80)
-                if not success:
-                    return None
-                
-                # Reload after training
-                model, scaler, metadata = self.load_lstm_model(symbol)
-                if model is None:
-                    return None
+                # IMPORTANT: prediction requests must NEVER train a model.
+                # Training is only allowed through the explicit training endpoint/job.
+                print(f"⚡ No pre-trained LSTM for {symbol}; skipping training during request.")
+                return None
 
             # ---- Load historical data ----
             df = self.get_historical_data(symbol, period='3mo')
@@ -749,13 +749,13 @@ class RealLSTMPredictor:
         """Enhanced fallback sentiment that checks for LSTM predictions first"""
         print(f"🔍 Generating sentiment analysis for {symbol}...")
         
-        # ========================================
-        # CRITICAL FIX: Check for LSTM prediction first!
-        # ========================================
+        # Use an already-trained LSTM if one exists. Never train from a
+        # dashboard/sentiment request. Otherwise continue to the fast fallback.
         try:
-            # Try to get LSTM prediction
-            lstm_prediction = self.predict_with_lstm(symbol, days=7)
-            
+            model, scaler, _ = self.load_lstm_model(symbol)
+            lstm_prediction = (self.predict_with_lstm(symbol, days=7)
+                               if model is not None and scaler is not None else None)
+
             if lstm_prediction and lstm_prediction.get("success"):
                 # Extract LSTM data
                 confidence = lstm_prediction.get("confidence", 65)
@@ -1051,11 +1051,17 @@ class RealLSTMPredictor:
     # ============================================
     
     def get_top_picks(self, count=5):
-        """Fast dynamic top picks. Never trains an LSTM during a dashboard request."""
+        """Fast dashboard top picks using live historical momentum only.
+
+        This endpoint is intentionally prediction-free: it never trains or
+        runs an LSTM while the dashboard is loading. Explicit prediction
+        endpoints can still use an already-trained model.
+        """
         cache_key = f"top_picks_{count}"
         now = time.time()
         if (cache_key in self.prediction_cache and
                 now - self.prediction_cache_time.get(cache_key, 0) < self.prediction_cache_ttl):
+            print("💾 Top picks: using 15-minute cache")
             return self.prediction_cache[cache_key]
 
         symbols = ['AAPL', 'MSFT', 'NVDA', 'AMD', 'GOOGL']
@@ -1065,42 +1071,21 @@ class RealLSTMPredictor:
                 df = self.get_historical_data(symbol, period='3mo')
                 if df is None or len(df) < 30:
                     return None
-                current_price = float(df['close'].iloc[-1])
 
-                # Only use an already-trained model. Training stays in the
-                # dedicated training endpoint/job so the dashboard stays fast.
-                model, scaler, metadata = self.load_lstm_model(symbol)
-                if model is not None and scaler is not None:
-                    prediction = self.predict_with_lstm(symbol, days=7)
-                    if prediction and prediction.get("success"):
-                        pred_change = float(prediction["predictions"]["prediction_change"])
-                        confidence = float(prediction.get("confidence", 65))
-                        if pred_change >= 3:
-                            sentiment, emoji, color = "STRONG_BUY", "🚀", "#16a34a"
-                        elif pred_change >= 1:
-                            sentiment, emoji, color = "BUY", "📈", "#22c55e"
-                        elif pred_change >= -1:
-                            sentiment, emoji, color = "HOLD", "⚖️", "#f59e0b"
-                        elif pred_change >= -3:
-                            sentiment, emoji, color = "SELL", "📉", "#ef4444"
-                        else:
-                            sentiment, emoji, color = "STRONG_SELL", "🔥", "#991b1b"
-                        return {
-                            "symbol": symbol, "name": self._get_stock_name(symbol),
-                            "sentiment": sentiment, "confidence": round(confidence, 1),
-                            "color": color, "emoji": emoji,
-                            "current_price": round(current_price, 2),
-                            "predicted_change": round(pred_change, 2),
-                            "reasoning": "AI analysis from trained LSTM model",
-                            "score": round(max(0, min(100, confidence + pred_change * 2)), 1),
-                        }
+                close = pd.to_numeric(df['close'], errors='coerce').dropna()
+                if len(close) < 10:
+                    return None
 
-                # Fast data-driven fallback; no hardcoded prices/predictions.
-                recent = df['close'].tail(10)
-                momentum = ((float(recent.iloc[-1]) / float(recent.iloc[0])) - 1) * 100
-                volatility = float(df['returns'].tail(20).std() * 100)
+                current_price = float(close.iloc[-1])
+                start_price = float(close.iloc[-10])
+                momentum = ((current_price / start_price) - 1.0) * 100 if start_price else 0.0
+                returns = pd.to_numeric(df.get('returns', pd.Series(dtype=float)), errors='coerce').dropna()
+                volatility = float(returns.tail(20).std() * 100) if len(returns) > 1 else 0.0
+
+                # Data-driven score only; no hardcoded prices or predictions.
                 predicted_change = max(-5.0, min(5.0, momentum * 0.7))
                 confidence = max(55.0, min(78.0, 72.0 - volatility * 0.8))
+
                 if predicted_change >= 2:
                     sentiment, emoji, color = "STRONG_BUY", "🚀", "#16a34a"
                 elif predicted_change >= 0.5:
@@ -1111,10 +1096,15 @@ class RealLSTMPredictor:
                     sentiment, emoji, color = "SELL", "📉", "#ef4444"
                 else:
                     sentiment, emoji, color = "STRONG_SELL", "🔥", "#991b1b"
+
                 return {
-                    "symbol": symbol, "name": self._get_stock_name(symbol),
-                    "sentiment": sentiment, "confidence": round(confidence, 1),
-                    "color": color, "emoji": emoji, "current_price": round(current_price, 2),
+                    "symbol": symbol,
+                    "name": self._get_stock_name(symbol),
+                    "sentiment": sentiment,
+                    "confidence": round(confidence, 1),
+                    "color": color,
+                    "emoji": emoji,
+                    "current_price": round(current_price, 2),
                     "predicted_change": round(predicted_change, 2),
                     "reasoning": "Live historical momentum analysis",
                     "score": round(max(0, min(100, confidence + predicted_change * 2)), 1),
@@ -1123,8 +1113,10 @@ class RealLSTMPredictor:
                 print(f"   ⚠️ Fast top-pick analysis failed for {symbol}: {exc}")
                 return None
 
+        # Only 5 lightweight historical calls, in parallel.
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             picks = [r for r in executor.map(analyze, symbols) if r is not None]
+
         picks.sort(key=lambda x: x["score"], reverse=True)
         picks = picks[:count]
         self.prediction_cache[cache_key] = picks
