@@ -564,6 +564,72 @@ STOCK_DEFINITIONS: List[Dict[str, str]] = [
     {"symbol": "VALE",     "country": "Brazil",      "currency": "USD", "name": "Vale S.A. (ADR)", "sector": "Mining"},
     {"symbol": "ITUB",     "country": "Brazil",      "currency": "USD", "name": "Itaú Unibanco (ADR)", "sector": "Finance"},
     {"symbol": "PBR",      "country": "Brazil",      "currency": "USD", "name": "Petrobras (ADR)", "sector": "Energy"},
+
+    # ============ Additional Global Markets ============
+    # Sweden
+    {"symbol": "VOLV-B.ST", "country": "Sweden", "currency": "SEK", "name": "Volvo AB", "sector": "Industrial"},
+    # Denmark
+    {"symbol": "NOVO-B.CO", "country": "Denmark", "currency": "DKK", "name": "Novo Nordisk", "sector": "Healthcare"},
+    # Norway
+    {"symbol": "EQNR.OL", "country": "Norway", "currency": "NOK", "name": "Equinor", "sector": "Energy"},
+    # Finland
+    {"symbol": "NOKIA.HE", "country": "Finland", "currency": "EUR", "name": "Nokia", "sector": "Technology"},
+    # Belgium
+    {"symbol": "KBC.BR", "country": "Belgium", "currency": "EUR", "name": "KBC Group", "sector": "Finance"},
+    # Austria
+    {"symbol": "OMV.VI", "country": "Austria", "currency": "EUR", "name": "OMV", "sector": "Energy"},
+    # Poland
+    {"symbol": "PKO.WA", "country": "Poland", "currency": "PLN", "name": "PKO Bank Polski", "sector": "Finance"},
+    # Czech Republic
+    {"symbol": "CEZ.PR", "country": "Czech Republic", "currency": "CZK", "name": "CEZ Group", "sector": "Utilities"},
+    # Portugal
+    {"symbol": "EDP.LS", "country": "Portugal", "currency": "EUR", "name": "EDP", "sector": "Utilities"},
+    # Greece
+    {"symbol": "OPAP.AT", "country": "Greece", "currency": "EUR", "name": "OPAP", "sector": "Consumer"},
+    # Mexico
+    {"symbol": "AMXL.MX", "country": "Mexico", "currency": "MXN", "name": "América Móvil", "sector": "Telecom"},
+    # Argentina
+    {"symbol": "GGAL", "country": "Argentina", "currency": "USD", "name": "Grupo Financiero Galicia (ADR)", "sector": "Finance"},
+    # Chile
+    {"symbol": "SQM", "country": "Chile", "currency": "USD", "name": "Sociedad Química y Minera (ADR)", "sector": "Materials"},
+    # South Africa
+    {"symbol": "NPN.JO", "country": "South Africa", "currency": "ZAR", "name": "Naspers", "sector": "Technology"},
+    # Saudi Arabia
+    {"symbol": "2222.SR", "country": "Saudi Arabia", "currency": "SAR", "name": "Saudi Aramco", "sector": "Energy"},
+    # UAE
+    {"symbol": "EMAAR.AE", "country": "UAE", "currency": "AED", "name": "Emaar Properties", "sector": "Real Estate"},
+    # Israel
+    {"symbol": "NICE", "country": "Israel", "currency": "USD", "name": "NICE Ltd. (ADR)", "sector": "Technology"},
+    # Turkey
+    {"symbol": "THYAO.IS", "country": "Turkey", "currency": "TRY", "name": "Turkish Airlines", "sector": "Airlines"},
+    # Thailand
+    {"symbol": "PTT.BK", "country": "Thailand", "currency": "THB", "name": "PTT Public Company", "sector": "Energy"},
+    # Malaysia
+    {"symbol": "1155.KL", "country": "Malaysia", "currency": "MYR", "name": "Malayan Banking", "sector": "Finance"},
+    # Indonesia
+    {"symbol": "BBCA.JK", "country": "Indonesia", "currency": "IDR", "name": "Bank Central Asia", "sector": "Finance"},
+    # Philippines
+    {"symbol": "BDO.PS", "country": "Philippines", "currency": "PHP", "name": "BDO Unibank", "sector": "Finance"},
+    # Vietnam
+    {"symbol": "VNM.VN", "country": "Vietnam", "currency": "VND", "name": "Vinamilk", "sector": "Consumer"},
+    # New Zealand
+    {"symbol": "FPH.NZ", "country": "New Zealand", "currency": "NZD", "name": "Fisher & Paykel Healthcare", "sector": "Healthcare"},
+    # Ireland
+    {"symbol": "CRH", "country": "Ireland", "currency": "USD", "name": "CRH plc (ADR)", "sector": "Materials"},
+    # Luxembourg
+    {"symbol": "RTL.F", "country": "Luxembourg", "currency": "EUR", "name": "RTL Group", "sector": "Media"},
+    # Iceland
+    {"symbol": "MAREL.IC", "country": "Iceland", "currency": "ISK", "name": "Marel", "sector": "Industrial"},
+    # Egypt
+    {"symbol": "COMI.CA", "country": "Egypt", "currency": "EGP", "name": "Commercial International Bank", "sector": "Finance"},
+    # Qatar
+    {"symbol": "QNBK.QA", "country": "Qatar", "currency": "QAR", "name": "Qatar National Bank", "sector": "Finance"},
+    # Kuwait
+    {"symbol": "NBK.KW", "country": "Kuwait", "currency": "KWD", "name": "National Bank of Kuwait", "sector": "Finance"},
+    # Hungary
+    {"symbol": "OTP.BD", "country": "Hungary", "currency": "HUF", "name": "OTP Bank", "sector": "Finance"},
+    # Romania
+    {"symbol": "TLV.RO", "country": "Romania", "currency": "RON", "name": "Banca Transilvania", "sector": "Finance"},
 ]
 
 # Quick-lookup index by uppercase symbol
@@ -679,10 +745,12 @@ def get_live_data():
     stocks_data = []
     total_volume = 0
     positive_stocks = 0
-    countries_covered = set()
+    # Count countries from the configured stock universe, not only from
+    # stocks that happen to return live data from an external API.
+    countries_covered = {stock["country"] for stock in stocks}
     sources_used = {}
     
-    print(f"📈 Processing {len(stocks)} stocks from 12+ countries...")
+    print(f"📈 Processing {len(stocks)} stocks from {len(countries_covered)} countries...")
     print("Note: Using FAST MODE with fallback data (no API delays)")
     print("="*60)
     
@@ -736,11 +804,12 @@ def get_live_data():
     
     # Calculate market indicators
     successful_stocks = [s for s in stocks_data if s["success"]]
-    total_stocks = len(successful_stocks) if successful_stocks else len(stocks_data)
+    total_tracked_stocks = len(stocks)
+    total_stocks = total_tracked_stocks
     
     if successful_stocks:
-        sentiment = (positive_stocks / total_stocks) * 100
-        volatility_indicator = sum(abs(s["change_percent"]) for s in successful_stocks) / total_stocks
+        sentiment = (positive_stocks / len(successful_stocks)) * 100
+        volatility_indicator = sum(abs(s["change_percent"]) for s in successful_stocks) / len(successful_stocks)
     else:
         sentiment = 50.0
         volatility_indicator = 1.5
