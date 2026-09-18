@@ -150,7 +150,6 @@ async def health():
         "db": {"ok": db_ok, "error": db_error},
         "scheduler": {"ok": scheduler_ok},
     }
-    return payload
 
 
 if __name__ == "__main__":
