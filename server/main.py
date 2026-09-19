@@ -72,6 +72,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:  # pragma: no cover
         log.warning("Background AI training failed to start: %s", e)
 
+    # Pre-warm market data cache so first user request responds in < 1ms
+    try:
+        from services.stock_data import get_live_data
+        get_live_data()
+        log.info("Market data cache pre-warmed")
+    except Exception as e:  # pragma: no cover
+        log.warning("Market cache warm skipped: %s", e)
+
     log.info("%s API ready", settings.APP_NAME)
     yield
 
@@ -150,10 +158,13 @@ async def health():
         "db": {"ok": db_ok, "error": db_error},
         "scheduler": {"ok": scheduler_ok},
     }
+    return payload
 
 
 if __name__ == "__main__":
-    # So you can just run `python main.py` instead of the long uvicorn command.
+    import os
     import uvicorn
 
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=settings.DEBUG)
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("main:app", host=host, port=port, reload=settings.DEBUG)

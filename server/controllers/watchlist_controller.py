@@ -41,10 +41,15 @@ def _oid(entry_id: str) -> ObjectId:
 
 
 async def list_watchlist(user_id: str) -> dict:
-    cursor = watchlist().find({"user_id": user_id}).sort("added_at", -1)
+    rows = await watchlist().find({"user_id": user_id}).sort("added_at", -1).to_list(length=1000)
+    symbols = [r["symbol"] for r in rows]
+    prices = sd.get_prices_for_symbols(symbols)
     items = []
-    async for r in cursor:
+    for r in rows:
         symbol = r["symbol"]
+        live = prices.get(symbol.upper()) or {}
+        price = float(live.get("price") or 0.0) if live.get("price") else None
+        chg = float(live.get("change_percent") or 0.0) if live.get("change_percent") is not None else None
         d = {
             "id": str(r["_id"]),
             "symbol": symbol,
@@ -52,14 +57,9 @@ async def list_watchlist(user_id: str) -> dict:
             "target_price_high": r.get("target_price_high"),
             "target_price_low": r.get("target_price_low"),
             "added_at": r["added_at"].isoformat() if r.get("added_at") else None,
+            "price": price,
+            "change_percent": chg,
         }
-        try:
-            live = sd.fetcher.get_stock_data(symbol)
-            d["price"] = float(live.get("price") or 0)
-            d["change_percent"] = float(live.get("change_percent") or 0)
-        except Exception:
-            d["price"] = None
-            d["change_percent"] = None
         meta = sd.SYMBOL_LOOKUP.get(symbol.upper())
         d["name"] = meta["name"] if meta else symbol
         d["sector"] = meta["sector"] if meta else None

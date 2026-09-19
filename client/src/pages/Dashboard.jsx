@@ -9,32 +9,50 @@ const PAGE_SIZE = 24
 export default function Dashboard() {
   const { getLiveData, streamUrl, addWatchlist, user, toast } = useApp()
   const navigate = useNavigate()
-  const [data, setData] = useState(null)
+  const [data, setData] = useState(() => {
+    try {
+      const cached = localStorage.getItem('ss_cached_market_data')
+      return cached ? JSON.parse(cached) : null
+    } catch {
+      return null
+    }
+  })
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
   const [live, setLive] = useState(false)
   const esRef = useRef(null)
 
+  const updateData = (fresh) => {
+    if (fresh && fresh.stocks_data) {
+      setData(fresh)
+      try {
+        localStorage.setItem('ss_cached_market_data', JSON.stringify(fresh))
+      } catch {}
+    }
+  }
+
   useEffect(() => {
     let pollId
     // Prefer SSE; fall back to polling if it errors.
-    getLiveData().then(setData).catch(() => {})
+    getLiveData().then(updateData).catch(() => {})
 
     try {
       const es = new EventSource(streamUrl)
       esRef.current = es
       es.addEventListener('snapshot', (e) => {
-        setData(JSON.parse(e.data))
-        setLive(true)
+        try {
+          updateData(JSON.parse(e.data))
+          setLive(true)
+        } catch {}
       })
       es.onerror = () => {
         setLive(false)
         es.close()
         esRef.current = null
-        pollId = setInterval(() => getLiveData().then(setData).catch(() => {}), 60000)
+        pollId = setInterval(() => getLiveData().then(updateData).catch(() => {}), 60000)
       }
     } catch {
-      pollId = setInterval(() => getLiveData().then(setData).catch(() => {}), 60000)
+      pollId = setInterval(() => getLiveData().then(updateData).catch(() => {}), 60000)
     }
 
     return () => {
