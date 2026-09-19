@@ -8,22 +8,68 @@ from __future__ import annotations
 
 import asyncio
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from services import stock_data as sd
 from services.ai_predictions import ai_predictor
+from services.cache import cache
+from services import ai_training
 
 SECTOR_BOOST = 12.0
+CACHE_PRED_TTL = 900
+
+
+async def _save_prediction_to_db(symbol: str, days: int, payload: dict):
+    """Persist prediction to MongoDB predictions_history in background."""
+    try:
+        from config.database import get_db, predictions_history
+        if get_db() is not None:
+            await predictions_history().insert_one({
+                "symbol": symbol.upper(),
+                "days": days,
+                "confidence": payload.get("confidence"),
+                "current_price": payload.get("current_price"),
+                "prediction_change": payload.get("predictions", {}).get("prediction_change"),
+                "payload": payload,
+                "created_at": datetime.now(timezone.utc),
+            })
+    except Exception:
+        pass
 
 
 async def predict(symbol: str, days: int = 7) -> dict:
-    result = await asyncio.to_thread(ai_predictor.predict_future, symbol.upper(), days)
+    sym = symbol.strip().upper()
+    cache_key = f"predict_{sym}_{days}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    # Check MongoDB predictions_history for recent prediction (< 1 hour)
+    try:
+        from config.database import get_db, predictions_history
+        if get_db() is not None:
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
+            doc = await predictions_history().find_one(
+                {"symbol": sym, "days": days, "created_at": {"$gt": cutoff}},
+                sort=[("created_at", -1)]
+            )
+            if doc and doc.get("payload"):
+                res = doc["payload"]
+                cache.set(cache_key, res, ttl=CACHE_PRED_TTL)
+                return res
+    except Exception:
+        pass
+
+    result = await asyncio.to_thread(ai_predictor.predict_future, sym, days)
     if result and result.get("success"):
+        cache.set(cache_key, result, ttl=CACHE_PRED_TTL)
+        asyncio.create_task(_save_prediction_to_db(sym, days, result))
         return result
+
     now = datetime.now()
-    return {
+    fallback = {
         "success": True,
-        "symbol": symbol.upper(),
+        "symbol": sym,
         "current_price": 100.00,
         "predictions": {
             "dates": [(now + timedelta(days=i + 1)).strftime("%Y-%m-%d") for i in range(days)],
@@ -35,15 +81,25 @@ async def predict(symbol: str, days: int = 7) -> dict:
         "note": "Fallback predictions",
         "generated_at": now.isoformat(),
     }
+    cache.set(cache_key, fallback, ttl=CACHE_PRED_TTL)
+    return fallback
 
 
 async def sentiment(symbol: str) -> dict:
-    result = await asyncio.to_thread(ai_predictor.get_sentiment_analysis, symbol.upper())
+    sym = symbol.strip().upper()
+    cache_key = f"sentiment_{sym}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    result = await asyncio.to_thread(ai_predictor.get_sentiment_analysis, sym)
     if result and result.get("success"):
+        cache.set(cache_key, result, ttl=CACHE_PRED_TTL)
         return result
-    return {
+
+    fallback = {
         "success": True,
-        "symbol": symbol.upper(),
+        "symbol": sym,
         "sentiment": {
             "sentiment": "HOLD",
             "confidence": 65.0,
@@ -55,18 +111,28 @@ async def sentiment(symbol: str) -> dict:
         },
         "generated_at": datetime.now().isoformat(),
     }
+    cache.set(cache_key, fallback, ttl=CACHE_PRED_TTL)
+    return fallback
 
 
 async def top_picks() -> dict:
+    cache_key = "ai_top_picks"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
     picks = await asyncio.to_thread(ai_predictor.get_top_picks, 5)
     if picks:
-        return {
+        out = {
             "success": True,
             "top_picks": picks,
             "count": len(picks),
             "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "source": "LSTM AI Model",
         }
+        cache.set(cache_key, out, ttl=CACHE_PRED_TTL)
+        return out
+
     fallback = [
         {"symbol": "NVDA", "name": "NVIDIA Corporation", "sentiment": "STRONG_BUY", "confidence": 85.6,
          "color": "#16a34a", "emoji": "🚀", "current_price": 650.45, "predicted_change": 4.5},
@@ -79,25 +145,28 @@ async def top_picks() -> dict:
         {"symbol": "GOOGL", "name": "Alphabet Inc.", "sentiment": "HOLD", "confidence": 68.5,
          "color": "#f59e0b", "emoji": "⚖️", "current_price": 152.89, "predicted_change": 0.8},
     ]
-    return {
+    out = {
         "success": True,
         "top_picks": fallback,
         "count": len(fallback),
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "source": "Fallback Analysis",
     }
+    cache.set(cache_key, out, ttl=CACHE_PRED_TTL)
+    return out
 
 
 async def train_model(symbol: str) -> dict:
-    result = await asyncio.to_thread(ai_predictor.train_model, symbol.upper(), 25)
-    if result and result.get("success"):
-        return {
-            "success": True,
-            "message": f"LSTM model trained successfully for {symbol}",
-            "symbol": symbol.upper(),
-            "timestamp": datetime.now().isoformat(),
-        }
-    return {"success": False, "error": f"Failed to train model for {symbol}"}
+    """Trigger LSTM training in a background daemon thread so user never waits."""
+    sym = symbol.strip().upper()
+    ai_training.train_symbol_background(sym, epochs=15)
+    return {
+        "success": True,
+        "message": f"LSTM model training started in background for {sym}",
+        "symbol": sym,
+        "status": "training_in_background",
+        "timestamp": datetime.now().isoformat(),
+    }
 
 
 async def backtest(symbol: str) -> dict:

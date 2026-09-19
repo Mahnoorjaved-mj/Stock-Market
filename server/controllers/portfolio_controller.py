@@ -39,16 +39,16 @@ def _oid(entry_id: str) -> ObjectId:
 
 def _enrich(rows: list[dict]):
     out, total_cost, total_value = [], 0.0, 0.0
+    symbols = [r["symbol"] for r in rows]
+    price_map = sd.get_prices_for_symbols(symbols)
+
     for r in rows:
         symbol = r["symbol"]
         qty = float(r["quantity"])
         buy_price = float(r["buy_price"])
         meta = sd.SYMBOL_LOOKUP.get(symbol.upper())
-        try:
-            live = sd.fetcher.get_stock_data(symbol)
-            current = float(live.get("price") or 0)
-        except Exception:
-            current = 0.0
+        live = price_map.get(symbol.upper()) or {}
+        current = float(live.get("price") or 0.0)
         cost = buy_price * qty
         value = current * qty
         out.append(
