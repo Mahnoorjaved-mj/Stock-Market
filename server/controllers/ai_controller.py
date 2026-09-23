@@ -171,10 +171,17 @@ async def train_model(symbol: str) -> dict:
 
 async def backtest(symbol: str) -> dict:
     def _run():
+        import io
+        import contextlib
         import yfinance as yf
 
-        hist = yf.Ticker(symbol.upper()).history(period="6mo")
-        if hist.empty:
+        try:
+            f = io.StringIO()
+            with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
+                hist = yf.Ticker(symbol.upper().replace(".", "-")).history(period="6mo")
+            if hist is None or hist.empty:
+                return None
+        except Exception:
             return None
         closes = hist["Close"].tolist()
         wins = losses = trades = 0

@@ -21,7 +21,14 @@ def start_scheduler() -> AsyncIOScheduler:
     if _scheduler is not None:
         return _scheduler
 
-    sched = AsyncIOScheduler(timezone=ET)
+    sched = AsyncIOScheduler(
+        timezone=ET,
+        job_defaults={
+            "coalesce": True,
+            "max_instances": 1,
+            "misfire_grace_time": 300,  # 5 minutes grace time prevents missed execution warnings
+        },
+    )
 
     # Alert sweep every 15 min, 09:30–15:xx ET Mon–Fri, plus a 16:00 close tick.
     sched.add_job(
@@ -29,12 +36,18 @@ def start_scheduler() -> AsyncIOScheduler:
         CronTrigger(day_of_week="mon-fri", hour="9-15", minute="*/15", timezone=ET),
         id="alert_sweep_intraday",
         replace_existing=True,
+        misfire_grace_time=300,
+        coalesce=True,
+        max_instances=1,
     )
     sched.add_job(
         alerts.evaluate_user_alerts,
         CronTrigger(day_of_week="mon-fri", hour=16, minute=0, timezone=ET),
         id="alert_sweep_close",
         replace_existing=True,
+        misfire_grace_time=300,
+        coalesce=True,
+        max_instances=1,
     )
     # Daily digest 17:00 ET Mon–Fri; weekly digest Friday 17:15 ET.
     sched.add_job(
@@ -42,12 +55,18 @@ def start_scheduler() -> AsyncIOScheduler:
         CronTrigger(day_of_week="mon-fri", hour=17, minute=0, timezone=ET),
         id="daily_digest",
         replace_existing=True,
+        misfire_grace_time=600,
+        coalesce=True,
+        max_instances=1,
     )
     sched.add_job(
         digests.send_weekly_digest,
         CronTrigger(day_of_week="fri", hour=17, minute=15, timezone=ET),
         id="weekly_digest",
         replace_existing=True,
+        misfire_grace_time=600,
+        coalesce=True,
+        max_instances=1,
     )
 
     sched.start()

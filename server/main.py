@@ -18,6 +18,8 @@ if sys.platform == "win32":
     except Exception:
         pass
 
+from datetime import datetime, timezone
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -98,13 +100,23 @@ app = FastAPI(title=f"{settings.APP_NAME} API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+cors_origins = settings.cors_origins
+if "*" in cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=".*",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # ---- Routers ----
 from routes import (  # noqa: E402
@@ -128,6 +140,22 @@ app.include_router(notifications.router)
 app.include_router(market.router)
 app.include_router(ai.router)
 app.include_router(admin.router)
+
+
+@app.get("/")
+async def root():
+    return {
+        "status": "online",
+        "service": f"{settings.APP_NAME} Stock Market API",
+        "version": "1.0.0",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "endpoints": {
+            "health": "/api/health",
+            "docs": "/docs",
+            "live_data": "/get_live_data",
+            "market_analysis": "/api/market-analysis",
+        },
+    }
 
 
 @app.get("/api/health")

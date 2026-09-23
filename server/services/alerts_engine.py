@@ -57,6 +57,12 @@ async def evaluate_user_alerts() -> dict:
 
     rows = await watchlist().find({}).to_list(length=10000)
     print(f"   {len(rows)} watchlist entries to evaluate")
+    if not rows:
+        return {"status": "ok", "sent": 0, "skipped": 0, "errors": 0}
+
+    from services import stock_data as sd
+    unique_symbols = list({r["symbol"] for r in rows if r.get("symbol")})
+    prices_map = await asyncio.to_thread(sd.get_prices_for_symbols, unique_symbols) if unique_symbols else {}
 
     for r in rows:
         try:
@@ -68,8 +74,9 @@ async def evaluate_user_alerts() -> dict:
             if not user:
                 continue
 
-            live = await asyncio.to_thread(_fetch_live, r["symbol"])
-            if not live:
+            sym = r.get("symbol", "").upper()
+            live = prices_map.get(sym)
+            if not live or not live.get("price"):
                 continue
             price = float(live["price"])
             change_pct = float(live.get("change_percent") or 0)

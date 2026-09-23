@@ -24,10 +24,13 @@ async def _build_user_digest(user: dict, period: str) -> dict:
     wl = await watchlist().find({"user_id": uid}).sort("added_at", -1).to_list(length=12)
     pf = await portfolio().find({"user_id": uid}).to_list(length=1000)
 
+    symbols = list({r["symbol"] for r in (wl + pf) if r.get("symbol")})
+    prices_map = await asyncio.to_thread(sd.get_prices_for_symbols, symbols) if symbols else {}
+
     watchlist_rows = []
     for r in wl:
-        live = await asyncio.to_thread(_fetch_live_safe, r["symbol"]) or {}
-        if not live.get("success"):
+        live = prices_map.get(r["symbol"].upper()) or {}
+        if not live.get("success") or not live.get("price"):
             continue
         meta = sd.SYMBOL_LOOKUP.get(r["symbol"].upper()) or {}
         watchlist_rows.append(
@@ -41,7 +44,7 @@ async def _build_user_digest(user: dict, period: str) -> dict:
 
     total_cost = total_value = 0.0
     for r in pf:
-        live = await asyncio.to_thread(_fetch_live_safe, r["symbol"]) or {}
+        live = prices_map.get(r["symbol"].upper()) or {}
         price = float(live.get("price") or 0)
         qty = float(r["quantity"])
         buy = float(r["buy_price"])
