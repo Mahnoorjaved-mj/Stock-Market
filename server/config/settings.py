@@ -54,6 +54,11 @@ class Settings(BaseSettings):
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.FRONTEND_ORIGIN.split(",") if o.strip()]
 
+    @property
+    def frontend_base_url(self) -> str:
+        origins = self.cors_origins
+        return origins[0] if origins else "http://localhost:5173"
+
 
 @lru_cache
 def get_settings() -> Settings:
