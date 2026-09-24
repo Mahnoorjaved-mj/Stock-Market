@@ -46,7 +46,7 @@ APScheduler>=3.10
 
 # ---- AI predictions (LSTM via PyTorch CPU build) ----
 # Comment out to skip AI; the app falls back to synthetic data.
-torch>=2.0
+# torch>=2.0 (commented out for zero-error, fast deployment on Render free tier)
 
 # ---- Observability ----
 sentry-sdk[fastapi]>=1.40
