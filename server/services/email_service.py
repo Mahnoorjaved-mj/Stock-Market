@@ -42,9 +42,14 @@ def _send(to_email: str, subject: str, html_body: str, text_fallback: Optional[s
             msg.attach(MIMEText(text_fallback, "plain"))
         msg.attach(MIMEText(html_body, "html"))
 
+        # Sanitize app passwords (Gmail 16-char app passwords are often copied with spaces)
+        raw_pw = settings.SMTP_PASSWORD.strip()
+        pw_no_spaces = raw_pw.replace(" ", "")
+        smtp_pw = pw_no_spaces if len(pw_no_spaces) == 16 else raw_pw
+
         with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20) as server:
             server.starttls()
-            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.login(settings.SMTP_USER, smtp_pw)
             server.send_message(msg)
         return True
     except Exception as e:
@@ -54,7 +59,7 @@ def _send(to_email: str, subject: str, html_body: str, text_fallback: Optional[s
 
 
 def send_otp(to_email: str, otp: str) -> bool:
-    html = _render("otp.html", otp=otp, base_url=settings.APP_BASE_URL)
+    html = _render("otp.html", otp=otp, base_url=settings.frontend_base_url)
     return _send(
         to_email,
         "Your StockSense verification code",
@@ -64,13 +69,13 @@ def send_otp(to_email: str, otp: str) -> bool:
 
 
 def send_welcome(to_email: str, name: Optional[str] = None) -> bool:
-    html = _render("welcome.html", name=name or to_email, base_url=settings.APP_BASE_URL)
+    html = _render("welcome.html", name=name or to_email, base_url=settings.frontend_base_url)
     return _send(to_email, "Welcome to StockSense", html)
 
 
 def send_password_reset(to_email: str, token: str) -> bool:
-    reset_url = f"{settings.APP_BASE_URL}/reset-password?token={token}"
-    html = _render("password_reset.html", reset_url=reset_url, base_url=settings.APP_BASE_URL)
+    reset_url = f"{settings.frontend_base_url}/reset-password?token={token}"
+    html = _render("password_reset.html", reset_url=reset_url, base_url=settings.frontend_base_url)
     return _send(
         to_email,
         "Reset your StockSense password",
