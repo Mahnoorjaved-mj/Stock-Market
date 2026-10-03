@@ -1,0 +1,18 @@
+{
+  "symbol": "META",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.9278751611709595,
+  "mape": 62.7546501159668,
+  "confidence": 92.78751373291016,
+  "trained_date": "2026-09-18T20:59:46.099960"
+}

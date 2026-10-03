@@ -33,9 +33,14 @@ export default function ForgotPassword() {
         <form onSubmit={submit} className="ss-card space-y-4 p-6">
           <h1 className="text-lg font-semibold text-primary">Reset password</h1>
           {sent ? (
-            <p className="text-sm text-secondary">
-              Check your inbox for a reset link. It expires in 1 hour.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-secondary">
+                Check your inbox for a reset link. It expires in 1 hour.
+              </p>
+              <div className="rounded border border-line bg-surface-hover/60 p-2.5 text-xs text-secondary leading-relaxed">
+                📩 <strong>Don't see it?</strong> Please check your <strong>Spam / Junk</strong> folder.
+              </div>
+            </div>
           ) : (
             <>
               <p className="text-sm text-secondary">

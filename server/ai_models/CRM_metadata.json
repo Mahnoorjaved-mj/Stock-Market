@@ -1,0 +1,18 @@
+{
+  "symbol": "CRM",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.8673152923583984,
+  "mape": 90.32762908935547,
+  "confidence": 86.73152923583984,
+  "trained_date": "2026-09-18T21:06:59.970505"
+}

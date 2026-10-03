@@ -1,0 +1,18 @@
+{
+  "symbol": "GOOGL",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.9024440050125122,
+  "mape": 14.822456359863281,
+  "confidence": 90.24440002441406,
+  "trained_date": "2026-09-18T20:56:43.696356"
+}

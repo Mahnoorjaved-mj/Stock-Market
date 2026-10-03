@@ -1,0 +1,18 @@
+{
+  "symbol": "BA",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.889939546585083,
+  "mape": 40.53215789794922,
+  "confidence": 88.99395751953125,
+  "trained_date": "2026-09-18T21:10:21.419423"
+}

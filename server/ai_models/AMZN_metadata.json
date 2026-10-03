@@ -1,0 +1,18 @@
+{
+  "symbol": "AMZN",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.7910622954368591,
+  "mape": 47.90504455566406,
+  "confidence": 79.10623168945312,
+  "trained_date": "2026-09-18T20:57:38.953738"
+}

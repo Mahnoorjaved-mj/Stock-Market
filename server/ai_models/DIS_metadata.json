@@ -1,0 +1,18 @@
+{
+  "symbol": "DIS",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.9243225455284119,
+  "mape": 200.38018798828125,
+  "confidence": 92.4322509765625,
+  "trained_date": "2026-09-18T21:09:30.320682"
+}

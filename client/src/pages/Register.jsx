@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { TrendingUp } from 'lucide-react'
 import { useApp } from '../context/context'
@@ -21,6 +21,13 @@ export default function Register() {
   const [password, setPassword] = useState('')
   const [otp, setOtp] = useState('')
   const [busy, setBusy] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => setResendCooldown((t) => t - 1), 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   const s = strength(password)
   const strengthLabel = ['Too weak', 'Weak', 'Good', 'Strong'][s]
@@ -30,9 +37,34 @@ export default function Register() {
     e.preventDefault()
     setBusy(true)
     try {
-      await register(email, password, name)
-      toast('OTP sent to your email', 'success')
+      const res = await register(email, password, name)
+      if (res && res.dev_otp) {
+        toast(`Verification code: ${res.dev_otp}`, 'info')
+        setOtp(res.dev_otp)
+      } else {
+        toast('Verification code sent! Check your Inbox and Spam folder', 'success')
+      }
       setStep(2)
+      setResendCooldown(30)
+    } catch (err) {
+      toast(err.message, 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const resendOtp = async () => {
+    if (resendCooldown > 0 || busy) return
+    setBusy(true)
+    try {
+      const res = await register(email, password, name)
+      if (res && res.dev_otp) {
+        toast(`New code: ${res.dev_otp}`, 'info')
+        setOtp(res.dev_otp)
+      } else {
+        toast('New verification code sent! Check your Inbox and Spam', 'success')
+      }
+      setResendCooldown(30)
     } catch (err) {
       toast(err.message, 'error')
     } finally {
@@ -45,7 +77,7 @@ export default function Register() {
     setBusy(true)
     try {
       await verifyOtp(email, otp)
-      toast('Account created!', 'success')
+      toast('Account created successfully!', 'success')
       navigate('/')
     } catch (err) {
       toast(err.message, 'error')
@@ -115,25 +147,39 @@ export default function Register() {
           <form onSubmit={submitStep2} className="ss-card space-y-4 p-6">
             <h1 className="text-lg font-semibold text-primary">Verify your email</h1>
             <p className="text-sm text-secondary">
-              Enter the 6-digit code we sent to <span className="text-primary">{email}</span>.
+              Enter the 6-digit code we sent to <span className="text-primary font-medium">{email}</span>.
             </p>
+            <div className="rounded border border-line bg-surface-hover/60 p-2.5 text-xs text-secondary leading-relaxed">
+              📩 <strong>Didn't see the code?</strong> Please check your <strong>Spam / Junk</strong> folder, or click <em>Resend code</em> below.
+            </div>
             <input
               className="ss-input text-center text-lg tracking-[0.3em]"
               maxLength={6}
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+              placeholder="000000"
               required
             />
             <button className="ss-btn w-full" disabled={busy}>
               {busy ? 'Verifying…' : 'Verify & create account'}
             </button>
-            <button
-              type="button"
-              className="w-full text-center text-sm text-secondary hover:text-primary"
-              onClick={() => setStep(1)}
-            >
-              Back
-            </button>
+            <div className="flex items-center justify-between text-xs pt-1">
+              <button
+                type="button"
+                className="text-secondary hover:text-primary transition-colors"
+                onClick={() => setStep(1)}
+              >
+                ← Edit email
+              </button>
+              <button
+                type="button"
+                className="text-accent hover:underline disabled:opacity-50 font-medium"
+                onClick={resendOtp}
+                disabled={busy || resendCooldown > 0}
+              >
+                {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : 'Resend code'}
+              </button>
+            </div>
           </form>
         )}
       </div>

@@ -1,0 +1,18 @@
+{
+  "symbol": "JNJ",
+  "feature_names": [
+    "close",
+    "volume",
+    "returns",
+    "volatility",
+    "rsi",
+    "ma_7",
+    "ma_21",
+    "macd"
+  ],
+  "sequence_length": 30,
+  "r_squared": 0.8917921781539917,
+  "mape": 30.89965057373047,
+  "confidence": 89.17921447753906,
+  "trained_date": "2026-09-18T21:03:32.827246"
+}

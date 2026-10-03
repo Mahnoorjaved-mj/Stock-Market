@@ -1,6 +1,7 @@
 """Auth business logic — Mongo + JWT. Ports legacy backend/routes/auth.py."""
 from __future__ import annotations
 
+import asyncio
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -40,10 +41,10 @@ async def register(email: str, password: str, name: str | None, request: Request
         await log_event("register_email_taken", request=request, metadata={"email": email})
         raise HTTPException(status_code=409, detail="An account with that email already exists")
 
-    # OTP resend rate-limit: max 3 within the TTL window.
+    # OTP resend rate-limit: max 5 within the TTL window.
     window_start = datetime.now(timezone.utc) - timedelta(minutes=OTP_TTL_MIN)
     recent = await otp().count_documents({"email": email, "created_at": {"$gt": window_start}})
-    if recent >= 3:
+    if recent >= 5:
         await log_event("register_otp_rate_limited", request=request, metadata={"email": email})
         raise HTTPException(
             status_code=429, detail="Too many verification attempts — try again in a few minutes"
@@ -62,12 +63,12 @@ async def register(email: str, password: str, name: str | None, request: Request
             "created_at": now,
         }
     )
-    email_sent = email_service.send_otp(email, code)
+    email_sent = await asyncio.to_thread(email_service.send_otp, email, code)
     await log_event("register_otp_sent", request=request, metadata={"email": email})
     payload = {"status": "success", "message": "OTP sent to your email"}
     if not email_sent:
         payload["dev_otp"] = code
-        payload["message"] = f"OTP: {code} (SMTP unconfigured)"
+        payload["message"] = f"OTP: {code} (Email delivery delayed or SMTP unconfigured)"
     return payload
 
 
@@ -103,7 +104,7 @@ async def verify_otp(email: str, code: str, request: Request) -> dict:
         user = doc
 
     await otp().delete_many({"email": email})
-    email_service.send_welcome(email, rec.get("name"))
+    await asyncio.to_thread(email_service.send_welcome, email, rec.get("name"))
     await log_event("register_success", user_id=str(user["_id"]), request=request)
     token = create_access_token(str(user["_id"]), email)
     return {"status": "success", "token": token, "user": _public_user(user)}
@@ -138,7 +139,7 @@ async def forgot_password(email: str, request: Request) -> dict:
                 "created_at": datetime.now(timezone.utc),
             }
         )
-        email_service.send_password_reset(email, token)
+        await asyncio.to_thread(email_service.send_password_reset, email, token)
         await log_event("password_reset_requested", user_id=str(user["_id"]), request=request)
     # Always succeed (don't leak which emails exist).
     return {"status": "success", "message": "If that email exists, a reset link has been sent"}
