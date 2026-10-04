@@ -79,14 +79,3 @@ npm run preview
 ```
 
 ---
-
-## 🌐 Production Deployment (Vercel)
-
-The repository includes `vercel.json` configured for Single Page Application client-side routing.
-When deploying on Vercel:
-- **Framework Preset**: Vite
-- **Root Directory**: `client`
-- **Build Command**: `npm run build`
-- **Output Directory**: `dist`
-- **Environment Variables**:
-  - `VITE_API_BASE_URL`: `https://your-backend-api.onrender.com`

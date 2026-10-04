@@ -118,9 +118,10 @@ flowchart TD
 
 ```text
 Stock-Market/
-├── client/          # Frontend React 19 + Vite + Tailwind dashboard
-├── server/          # Backend FastAPI + PyTorch LSTM + MongoDB API
-└── assets/          # Project documentation media & dashboard preview
+├── client/              # Frontend React 19 + Vite + Tailwind dashboard
+├── server/              # Backend FastAPI REST & SSE services
+├── server/ai_models/    # Pre-trained PyTorch LSTM forecast models (.pth)
+└── assets/              # Dashboard preview images & screenshots
 ```
 
 ---
@@ -203,33 +204,16 @@ npm run dev
 
 ---
 
-## 🔑 Environment Variables Reference
+## 🔑 Core Environment Variables
 
-### Backend (`server/.env`)
+| Variable | Location | Description | Example / Default | Required |
+| :--- | :--- | :--- | :--- | :---: |
+| `MONGO_URI` | server/.env | MongoDB connection URI | mongodb://localhost:27017 | Yes |
+| `JWT_SECRET` | server/.env | Secret key for JWT signing | your-secret-key-here | Yes |
+| `FRONTEND_ORIGIN` | server/.env | Allowed CORS frontend origins | http://localhost:5173 | Yes |
+| `VITE_API_BASE_URL` | client/.env | Backend API URL (leave blank for dev proxy) | http://127.0.0.1:8000 | No |
 
-| Variable | Description | Default / Example | Required |
-| :--- | :--- | :--- | :---: |
-| `APP_NAME` | Name of the application | `StockSense` | No |
-| `DEBUG` | Enables hot-reload and verbose logging | `True` | No |
-| `APP_BASE_URL` | Backend public URL | `http://127.0.0.1:8000` | Yes |
-| `FRONTEND_ORIGIN` | Comma-separated CORS allowed origins | `http://localhost:5173,http://127.0.0.1:5173` | Yes |
-| `MONGO_URI` | MongoDB connection string | `mongodb+srv://<user>:<pwd>@cluster.mongodb.net/` | Yes |
-| `MONGO_DB_NAME` | MongoDB database name | `stocksense` | No |
-| `JWT_SECRET` | Secret key for signing JSON Web Tokens | `your-cryptographic-secret` | Yes |
-| `JWT_ALGORITHM` | JWT signing algorithm | `HS256` | No |
-| `JWT_EXPIRE_HOURS` | Lifetime of access token in hours | `4` | No |
-| `ALPHA_VANTAGE_KEY` | Alpha Vantage API key (uses yfinance if blank) | `YOUR_API_KEY` | No |
-| `SMTP_HOST` | Outgoing SMTP host (e.g. Gmail) | `smtp.gmail.com` | Optional |
-| `SMTP_PORT` | Outgoing SMTP port | `587` | Optional |
-| `SMTP_USER` | SMTP account email | `alerts@example.com` | Optional |
-| `SMTP_PASSWORD` | SMTP app password | `xxxx xxxx xxxx xxxx` | Optional |
-| `REDIS_URL` | Redis instance connection URL | `redis://localhost:6379/0` | Optional |
-
-### Frontend (`client/.env`)
-
-| Variable | Description | Example |
-| :--- | :--- | :--- |
-| `VITE_API_BASE_URL` | Base URL of deployed backend (leave empty for dev proxy) | `https://api.stocksense.com` |
+> ℹ️ *Optional variables (such as `ALPHA_VANTAGE_KEY` and SMTP settings) can be configured in `server/.env.example`.*
 
 ---
 
@@ -278,25 +262,6 @@ python -m pytest tests/e2e_smoke.py -v
 cd ../client
 npm run lint
 ```
-
----
-
-## 🚢 Deployment Guide
-
-### Deploying Frontend to Vercel
-1. Push repository to GitHub.
-2. Import the repository in [Vercel](https://vercel.com).
-3. Set the **Root Directory** to `client`.
-4. Configure environment variable:
-   - `VITE_API_BASE_URL`: `https://your-backend-api.onrender.com`
-5. Click **Deploy**. Vercel will automatically read `vercel.json` for SPA URL rewrites.
-
-### Deploying Backend to Render / Railway
-1. Create a new **Web Service** pointing to this repository.
-2. Set Build Command: `pip install -r requirements.txt`
-3. Set Start Command: `python main.py` (or `uvicorn server.main:app --host 0.0.0.0 --port $PORT`)
-4. Add environment variables: `MONGO_URI`, `JWT_SECRET`, `FRONTEND_ORIGIN`.
-5. Health Check Path: `/api/health`.
 
 ---
 
