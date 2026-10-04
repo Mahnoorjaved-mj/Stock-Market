@@ -118,10 +118,11 @@ flowchart TD
 
 ```text
 Stock-Market/
-├── client/              # Frontend React 19 + Vite + Tailwind dashboard
-├── server/              # Backend FastAPI REST & SSE services
-├── server/ai_models/    # Pre-trained PyTorch LSTM forecast models (.pth)
-└── assets/              # Dashboard preview images & screenshots
+├── assets/          # Dashboard preview images & media
+├── client/          # Frontend React 19 + Vite + Tailwind dashboard
+├── server/          # Backend FastAPI REST & SSE services
+├── .gitignore       # Git ignore configuration
+└── README.md        # Project documentation
 ```
 
 ---
