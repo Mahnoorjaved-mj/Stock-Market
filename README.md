@@ -68,35 +68,35 @@
 ```mermaid
 flowchart TD
     subgraph Client["Frontend SPA (React 19 + Vite + Tailwind)"]
-        UI[Modern Dark/Light UI]
-        CP[Command Palette Ctrl+K]
-        CTX[App Context API]
-        CH[Chart.js Financial Visualizer]
+        UI["Modern Dark / Light UI"]
+        CP["Command Palette (Ctrl+K)"]
+        CTX["App Context API"]
+        CH["Chart.js Visualizer"]
     end
 
     subgraph Server["FastAPI Backend (Python 3.11+)"]
-        API[FastAPI Gateway]
-        AUTH[JWT & 2FA Auth Controller]
-        MKT[Market & SSE Controller]
-        AIC[AI Prediction Engine]
-        SCHED[APScheduler Background Jobs]
+        API["FastAPI Gateway"]
+        AUTH["JWT & 2FA Auth Controller"]
+        MKT["Market & SSE Controller"]
+        AIC["AI Prediction Engine"]
+        SCHED["APScheduler Background Jobs"]
     end
 
     subgraph DataML["Data & AI Layer"]
-        LSTM[PyTorch LSTM Models (.pth)]
-        AV[Alpha Vantage API]
-        YF[yfinance Fallback]
+        LSTM["PyTorch LSTM Models (.pth)"]
+        AV["Alpha Vantage API"]
+        YF["yfinance Fallback"]
     end
 
     subgraph Persistence["Storage & Messaging"]
-        MONGO[(MongoDB Atlas / Local)]
-        REDIS[(Redis Cache / In-Memory)]
-        SMTP[SMTP Email Gateway]
+        MONGO[("MongoDB Atlas / Local")]
+        REDIS[("Redis Cache / In-Memory")]
+        SMTP["SMTP Email Gateway"]
     end
 
     UI --> CTX
     CP --> CTX
-    CTX -->|REST API / SSE| API
+    CTX -->|"REST API / SSE"| API
     CTX --> CH
 
     API --> AUTH
