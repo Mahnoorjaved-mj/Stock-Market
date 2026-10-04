@@ -14,9 +14,7 @@
 
 ## 📸 Preview
 
-<p align="center">
-  <img src="assets/preview.png" alt="StockSense Dashboard Preview" width="100%">
-</p>
+![StockSense Dashboard Preview](assets/dashboard.png)
 
 ---
 
@@ -116,45 +114,13 @@ flowchart TD
 
 ---
 
-## 📁 Repository Structure
+## 📁 Project Structure
 
 ```text
 Stock-Market/
-├── assets/                     # Documentation assets and screenshots
-│   └── preview.png             # High-resolution dashboard UI preview
-├── client/                     # Frontend Single Page Application
-│   ├── public/                 # Static public assets (favicons, manifest)
-│   ├── src/
-│   │   ├── components/         # Reusable UI components (Chart, Sidebar, KPIs)
-│   │   ├── context/            # React Context API (Auth, Market Data, Toast)
-│   │   ├── pages/              # Application pages (Dashboard, AI, Portfolio)
-│   │   ├── App.jsx             # Route definitions & layout wrapper
-│   │   ├── index.css           # Tailwind directives & design system tokens
-│   │   ├── main.jsx            # React root DOM mounting point
-│   │   └── theme.js            # Unified Chart.js color palette tokens
-│   ├── .env.example            # Frontend environment variable template
-│   ├── package.json            # Node.js dependencies and scripts
-│   ├── tailwind.config.js      # Tailwind CSS design system rules
-│   ├── vercel.json             # Vercel SPA routing rewrite rules
-│   └── vite.config.js          # Vite build and reverse proxy configuration
-├── server/                     # Asynchronous FastAPI Backend
-│   ├── ai_models/              # Trained PyTorch weights (.pth) & scalers (.pkl)
-│   ├── config/                 # Pydantic settings & Motor MongoDB connectors
-│   ├── controllers/            # Core business logic handlers
-│   ├── email_templates/        # Responsive Jinja2 HTML email templates
-│   ├── models/                 # Pydantic data validation schemas
-│   ├── routes/                 # Expressive API route endpoints
-│   ├── services/               # Stock data fetchers, LSTM engine, scheduler
-│   ├── tests/                  # End-to-end smoke tests and test suites
-│   ├── utils/                  # Audit logging, security, FastAPI dependencies
-│   ├── .env.example            # Backend environment variable template
-│   ├── main.py                 # FastAPI application factory & Uvicorn runner
-│   └── requirements.txt        # Backend Python dependencies
-├── .gitignore                  # Production-ready git ignore specifications
-├── .python-version             # Pinned Python version (3.11)
-├── main.py                     # Root entrypoint for zero-config deployments
-├── requirements.txt            # Root requirements pointer
-└── README.md                   # Main project documentation
+├── client/          # Frontend React 19 + Vite + Tailwind dashboard
+├── server/          # Backend FastAPI + PyTorch LSTM + MongoDB API
+└── assets/          # Project documentation media & dashboard preview
 ```
 
 ---

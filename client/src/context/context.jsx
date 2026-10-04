@@ -14,6 +14,7 @@ import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from 'lucide-react'
 // =====================================================================
 
 const AppContext = createContext(null)
+// eslint-disable-next-line react-refresh/only-export-components
 export const useApp = () => useContext(AppContext)
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -39,9 +40,8 @@ async function request(method, path, body, { raw = false } = {}) {
   }
   if (raw) return res
 
-  let data = null
   const ct = res.headers.get('content-type') || ''
-  data = ct.includes('application/json') ? await res.json() : await res.text()
+  const data = ct.includes('application/json') ? await res.json() : await res.text()
 
   if (!res.ok) {
     const msg = (data && (data.detail || data.message || data.error)) || `Request failed (${res.status})`

@@ -26,58 +26,12 @@ The backend provides high-concurrency, asynchronous REST APIs and Server-Sent Ev
 
 ```text
 server/
-├── ai_models/              # 17 pre-trained LSTM weights (.pth), scalers (.pkl), metadata (.json)
-├── config/
-│   ├── database.py         # Motor async MongoDB client & index initializers
-│   └── settings.py         # Pydantic BaseSettings environment loader
-├── controllers/            # Business logic controllers
-│   ├── admin_controller.py        # System analytics and audit event queries
-│   ├── ai_controller.py           # Model inference, predictions, and retraining
-│   ├── alert_controller.py        # Alert threshold persistence and queries
-│   ├── auth_controller.py         # Register, OTP verify, login, 2FA, password reset
-│   ├── market_controller.py       # Live quotes, search, and historical aggregates
-│   ├── notification_controller.py # In-app notification center
-│   ├── portfolio_controller.py    # Position tracking, P&L, buy/sell, CSV export
-│   ├── profile_controller.py      # Profile updates and password changes
-│   └── watchlist_controller.py    # User watchlists
-├── email_templates/        # Responsive Jinja2 HTML email templates
-│   ├── _base.html          # Base transactional email layout
-│   ├── alert.html          # Triggered price threshold email
-│   ├── digest.html         # Periodic market digest
-│   ├── otp.html            # Verification code template
-│   ├── password_reset.html # Password recovery link template
-│   └── welcome.html        # Account creation welcome
-├── models/                 # Pydantic schemas and MongoDB models
-│   ├── common.py           # Standard response envelopes and pagination
-│   └── user.py             # User document schema
-├── routes/                 # FastAPI APIRouters
-│   ├── admin.py            # /api/admin/*
-│   ├── ai.py               # /api/predict/*, /api/ai/*
-│   ├── alerts.py           # /api/alerts/*
-│   ├── auth.py             # /auth/*
-│   ├── market.py           # /api/market/*, /stream/*
-│   ├── notifications.py    # /api/notifications/*
-│   ├── portfolio.py        # /api/portfolio/*
-│   ├── profile.py          # /api/profile/*
-│   └── watchlist.py        # /api/watchlist/*
-├── services/               # Background services and calculation engines
-│   ├── ai_predictions.py   # RealLSTMPredictor PyTorch model loader & inference
-│   ├── ai_training.py      # Background retraining pipeline
-│   ├── alerts_engine.py    # Periodic market threshold checker
-│   ├── cache.py            # Key-value TTL caching (Redis or in-memory)
-│   ├── digests.py          # Digest email generator
-│   ├── email_service.py    # Outgoing SMTP mailer
-│   ├── scheduler.py        # APScheduler startup & cron tasks
-│   └── stock_data.py       # Real-time quote & historical OHLCV provider
-├── tests/
-│   └── e2e_smoke.py        # End-to-end API smoke tests
-├── utils/
-│   ├── audit.py            # MongoDB audit event logger
-│   ├── deps.py             # FastAPI dependency injection (auth guards, DB)
-│   └── security.py         # Password hashing & JWT generation
-├── .env.example            # Environment variables configuration guide
-├── main.py                 # Application factory & Uvicorn runner
-└── requirements.txt        # Server Python dependencies
+├── ai_models/              # 17 pre-trained LSTM weights (.pth), scalers (.pkl)
+├── controllers/            # Business logic handlers (auth, market, portfolio, AI)
+├── routes/                 # FastAPI REST and SSE endpoints
+├── services/               # Market data engine, LSTM predictions, alert scheduler
+├── models/                 # Pydantic schemas & data validation models
+└── email_templates/        # Responsive Jinja2 email templates
 ```
 
 ---

@@ -62,7 +62,7 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const stocks = data?.stocks_data || []
+  const stocks = useMemo(() => data?.stocks_data || [], [data?.stocks_data])
   const ind = data?.market_indicators || {}
 
   const filtered = useMemo(() => {
