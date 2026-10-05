@@ -2,7 +2,7 @@
 
 > **Modern, High-Performance React 19 Single Page Application for Real-Time Stock Analytics & AI Forecasting.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://stock-market-ebon-five.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://stock-market-tan-delta.vercel.app/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
@@ -11,7 +11,7 @@
 
 ## 📸 Preview
 
-![StockSense Frontend Preview](public/dashboard.png)
+[![StockSense Frontend Preview](public/dashboard.png)](https://stock-market-tan-delta.vercel.app/)
 
 ---
 
