@@ -2,7 +2,7 @@
 
 > **Next-Generation Real-Time Stock Market Intelligence, Portfolio Analytics & Deep Learning LSTM Price Forecasting Platform.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://stocksense-dashboard.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://stock-market-ebon-five.vercel.app)
 [![API Swagger Docs](https://img.shields.io/badge/API%20Docs-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](http://127.0.0.1:8000/docs)
 [![Python Version](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![React Version](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
@@ -22,7 +22,7 @@
 
 | Service | Environment | URL |
 | :--- | :--- | :--- |
-| **Frontend Web App** | Production (Vercel) | [https://stocksense-dashboard.vercel.app](https://stocksense-dashboard.vercel.app) |
+| **Frontend Web App** | Production (Vercel) | [https://stock-market-ebon-five.vercel.app](https://stock-market-ebon-five.vercel.app) |
 | **Backend API** | Production / Local | [http://127.0.0.1:8000](http://127.0.0.1:8000) |
 | **Interactive API Docs** | Swagger UI | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
 | **API Health Check** | System Monitor | [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health) |
