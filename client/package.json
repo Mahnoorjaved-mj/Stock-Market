@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "description": "Real-time stock market analysis, portfolio tracking, and AI prediction platform",
-  "homepage": "https://stocksense-dashboard.vercel.app",
+  "homepage": "https://stock-market-ebon-five.vercel.app",
   "type": "module",
   "scripts": {
     "dev": "vite",
